@@ -10,13 +10,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     
     if (!empty($email)) {
-        // Check if email exists in users table
+        
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
         
         if ($user) {
-            // Check for recent reset request (1 minute cooldown)
+            
             $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE) ORDER BY created_at DESC LIMIT 1");
             $stmt->execute([$email]);
             $recent_request = $stmt->fetch();
@@ -24,14 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($recent_request) {
                 $error = "Please wait 1 minute before requesting another reset code.";
             } else {
-                // Generate 6-digit reset code
+                
                 $reset_code = sprintf("%06d", mt_rand(1, 999999));
                 
-                // Store reset code in database
+                
                 $stmt = $pdo->prepare("INSERT INTO password_resets (email, code, user_type) VALUES (?, ?, 'user')");
                 $stmt->execute([$email, $reset_code]);
                 
-                // Send reset code via email
+                
                 if (sendPasswordResetEmail($email, $reset_code, 'User')) {
                     $_SESSION['reset_email'] = $email;
                     $_SESSION['user_type'] = 'user';
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } else {
-            // Don't reveal if email exists or not for security
+            
             $error = "If this email exists, a reset code will be sent.";
         }
     } else {
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><path d="M0,300 Q300,200 600,300 T1200,300 L1200,600 L0,600 Z" fill="rgba(255,255,255,0.03)"/></svg>') repeat-x bottom;
+            background: url('data:image/svg+xml,<svg xmlns="http:
             background-size: cover;
             opacity: 0.5;
             pointer-events: none;
@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="forgot-container">
         <div class="forgot-header">
             <div class="icon-wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <svg xmlns="http:
                     <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
                 </svg>
             </div>
@@ -308,7 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-// Check if there's a rate limit error and handle countdown
+
 <?php if ($error && strpos($error, 'wait') !== false && strpos($error, 'minute') !== false): ?>
 (function() {
     const errorDiv = document.querySelector('.error-message');
@@ -316,23 +316,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const emailInput = document.querySelector('#email');
     
     if (errorDiv) {
-        // Store the timestamp when error was shown
-        const errorTimestamp = Date.now();
-        const cooldownDuration = 60000; // 60 seconds in milliseconds
         
-        // Disable form submission during cooldown
+        const errorTimestamp = Date.now();
+        const cooldownDuration = 60000; 
+        
+        
         submitButton.disabled = true;
         submitButton.style.opacity = '0.6';
         submitButton.style.cursor = 'not-allowed';
         emailInput.disabled = true;
         
-        // Update countdown every second
+        
         const countdownInterval = setInterval(function() {
             const elapsed = Date.now() - errorTimestamp;
             const remaining = cooldownDuration - elapsed;
             
             if (remaining <= 0) {
-                // Cooldown finished - remove error and enable form
+                
                 errorDiv.style.transition = 'all 0.3s ease';
                 errorDiv.style.opacity = '0';
                 setTimeout(function() {
@@ -346,7 +346,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 clearInterval(countdownInterval);
             } else {
-                // Update the error message with countdown
+                
                 const secondsLeft = Math.ceil(remaining / 1000);
                 errorDiv.textContent = `Please wait ${secondsLeft} second${secondsLeft !== 1 ? 's' : ''} before requesting another reset code.`;
             }

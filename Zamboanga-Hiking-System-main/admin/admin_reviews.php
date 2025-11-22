@@ -6,7 +6,6 @@ session_start();
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
 
-// Get all reviews grouped by status
 try {
     $stmt = $pdo->prepare("
         SELECT 
@@ -25,7 +24,7 @@ try {
     $stmt->execute();
     $all_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Group reviews by status
+    
     $pending_reviews = array_filter($all_reviews, fn($r) => $r['status'] === 'pending');
     $approved_reviews = array_filter($all_reviews, fn($r) => $r['status'] === 'approved');
     $rejected_reviews = array_filter($all_reviews, fn($r) => $r['status'] === 'rejected');
@@ -34,7 +33,7 @@ try {
     die("Database error: " . $e->getMessage());
 }
 
-// Handle status messages
+
 $message = '';
 $message_type = '';
 if (isset($_GET['success'])) {
@@ -54,9 +53,9 @@ if (isset($_GET['success'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Review Management - Admin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https:
+    <link rel="preconnect" href="https:
+    <link href="https:
 </head>
 
 <style>
@@ -104,7 +103,7 @@ h1 {
     text-align: center;
 }
 
-/* Tabs */
+
 .tabs {
     display: flex;
     gap: 15px;
@@ -130,7 +129,7 @@ h1 {
     transform: translateY(-3px);
 }
 
-/* Table */
+
 .review-table-container {
     background: white;
     padding: 20px;
@@ -169,7 +168,7 @@ h1 {
 .status-rejected { background: #fee2e2; color: #dc2626; }
 .status-pending { background: #fef3c7; color: #92400e; }
 
-/* Modal */
+
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -381,7 +380,7 @@ function closeModal() {
     document.getElementById("commentModal").style.display = "none";
 }
 
-// Default tab:
+
 document.querySelectorAll(".tab-button")[0].click();
 </script>
 

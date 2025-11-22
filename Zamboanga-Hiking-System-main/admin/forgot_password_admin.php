@@ -12,13 +12,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
     
     if (!empty($email)) {
-        // Check if email exists in admins table
+        
         $stmt = $pdo->prepare("SELECT * FROM admins WHERE email = ?");
         $stmt->execute([$email]);
         $admin = $stmt->fetch();
         
         if ($admin) {
-            // Check for recent reset request (1 minute cooldown)
+            
             $stmt = $pdo->prepare("SELECT *, TIMESTAMPDIFF(SECOND, created_at, NOW()) as seconds_ago FROM password_resets WHERE email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE) ORDER BY created_at DESC LIMIT 1");
             $stmt->execute([$email]);
             $recent_request = $stmt->fetch();
@@ -28,14 +28,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($remaining_seconds < 0) $remaining_seconds = 0;
                 $error = "Please wait before requesting another reset code.";
             } else {
-                // Generate 6-digit reset code
+                
                 $reset_code = sprintf("%06d", mt_rand(1, 999999));
                 
-                // Store reset code in database
+                
                 $stmt = $pdo->prepare("INSERT INTO password_resets (email, code, user_type) VALUES (?, ?, 'admin')");
                 $stmt->execute([$email, $reset_code]);
                 
-                // Send reset code via email
+                
                 if (sendPasswordResetEmail($email, $reset_code, 'Admin')) {
                     $_SESSION['reset_email'] = $email;
                     $_SESSION['user_type'] = 'admin';
@@ -46,7 +46,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
         } else {
-            // Don't reveal if email exists or not for security
+            
             $error = "If this email exists, a reset code will be sent.";
         }
     } else {
@@ -60,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password - Trail Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https:
     <style>
         * {
             margin: 0;
@@ -368,7 +368,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
        
         <div class="logo-section">
             <div class="logo-icon">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24" xmlns="http:
                     <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                 </svg>
             </div>
@@ -397,7 +397,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label for="email">Email Address</label>
                 <div class="input-wrapper">
                     <input type="email" id="email" name="email" placeholder="Enter your admin email" required autofocus>
-                    <svg class="input-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="input-icon" viewBox="0 0 24 24" xmlns="http:
                         <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                     </svg>
                 </div>

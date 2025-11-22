@@ -2,26 +2,26 @@
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
 
-// Check admin login
+
 check_login();
 
-// Get report type
+
 $type = isset($_GET['type']) ? $_GET['type'] : 'views';
 
-// Set headers for CSV download
+
 header('Content-Type: text/csv; charset=utf-8');
 header('Content-Disposition: attachment; filename="' . $type . '_report_' . date('Y-m-d') . '.csv"');
 
-// Create output stream
+
 $output = fopen('php://output', 'w');
 
-// Add BOM for Excel UTF-8 support
+
 fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
 try {
     switch($type) {
         case 'views':
-            // Trail Views Report
+
             fputcsv($output, ['Trail Name', 'Total Views', 'Logged-in Views', 'Guest Views', 'Last Viewed']);
             
             $stmt = $pdo->query("
@@ -49,7 +49,7 @@ try {
             break;
             
         case 'users':
-            // Users Report
+
             fputcsv($output, ['Username', 'First Name', 'Last Name', 'Email', 'Registration Date', 'Total Reviews']);
             
             $stmt = $pdo->query("
@@ -79,7 +79,7 @@ try {
             break;
             
         case 'trails':
-            // Trails Report
+
             fputcsv($output, ['Trail Name', 'Difficulty', 'Distance (km)', 'Duration (hrs)', 'Elevation (m)', 'Total Views', 'Avg Rating', 'Total Reviews']);
             
             $stmt = $pdo->query("

@@ -1,5 +1,5 @@
 <?php
-// Clean output buffer to prevent any extra characters
+
 ob_clean();
 
 header('Content-Type: application/json');

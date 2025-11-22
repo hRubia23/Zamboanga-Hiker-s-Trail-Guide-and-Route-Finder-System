@@ -2,12 +2,12 @@
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
 
-// Check admin login
+
 check_login();
 
-// Fetch analytics data
 
-// 1. Total Counts
+
+
 $stmt = $pdo->query("SELECT COUNT(*) as count FROM trail_views");
 $total_views = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
@@ -20,12 +20,12 @@ $total_users = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 $stmt = $pdo->query("SELECT COUNT(*) as count FROM reviews WHERE status = 'approved'");
 $total_reviews = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-// 2. Views by logged-in users vs guests
+
 $stmt = $pdo->query("SELECT COUNT(*) as count FROM trail_views WHERE user_id IS NOT NULL");
 $logged_in_views = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 $guest_views = $total_views - $logged_in_views;
 
-// 3. Most Popular Trails (Top 5)
+
 $stmt = $pdo->query("
     SELECT t.name, COUNT(tv.id) as view_count
     FROM trails t
@@ -36,7 +36,7 @@ $stmt = $pdo->query("
 ");
 $popular_trails = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 4. Recent Trail Views (Last 7 days)
+
 $stmt = $pdo->query("
     SELECT DATE(viewed_at) as date, COUNT(*) as count
     FROM trail_views
@@ -46,7 +46,7 @@ $stmt = $pdo->query("
 ");
 $weekly_views = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 5. User Registration Trend (Last 30 days)
+
 $stmt = $pdo->query("
     SELECT DATE(created_at) as date, COUNT(*) as count
     FROM users
@@ -56,7 +56,7 @@ $stmt = $pdo->query("
 ");
 $user_registrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 6. Reviews per Trail
+
 $stmt = $pdo->query("
     SELECT t.name, COUNT(r.id) as review_count
     FROM trails t
@@ -67,7 +67,7 @@ $stmt = $pdo->query("
 ");
 $trail_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 7. Average Rating per Trail
+
 $stmt = $pdo->query("
     SELECT t.name, AVG(r.rating) as avg_rating, COUNT(r.id) as review_count
     FROM trails t
@@ -79,7 +79,7 @@ $stmt = $pdo->query("
 ");
 $top_rated_trails = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Prepare data for JavaScript Charts
+
 $popular_trails_labels = json_encode(array_column($popular_trails, 'name'));
 $popular_trails_data = json_encode(array_column($popular_trails, 'view_count'));
 
@@ -98,8 +98,8 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Analytics - Trail Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https:
+    <script src="https:
     <style>
         * {
             margin: 0;
@@ -414,7 +414,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
         <div class="header-content">
             <div class="logo-section">
                 <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg viewBox="0 0 24 24" xmlns="http:
                         <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                     </svg>
                 </div>
@@ -442,7 +442,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                         </svg>
                     </div>
@@ -456,7 +456,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
                         </svg>
                     </div>
@@ -470,7 +470,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                         </svg>
                     </div>
@@ -484,7 +484,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>
                         </svg>
                     </div>
@@ -548,7 +548,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
     </div>
 
     <script>
-        // Weekly Views Chart
+        
         const weeklyCtx = document.getElementById('weeklyViewsChart').getContext('2d');
         new Chart(weeklyCtx, {
             type: 'line',
@@ -578,7 +578,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
             }
         });
 
-        // User Registrations Chart
+        
         const regCtx = document.getElementById('registrationsChart').getContext('2d');
         new Chart(regCtx, {
             type: 'bar',
@@ -606,7 +606,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
             }
         });
 
-        // Popular Trails Chart
+        
         const popularCtx = document.getElementById('popularTrailsChart').getContext('2d');
         new Chart(popularCtx, {
             type: 'bar',
@@ -635,7 +635,7 @@ $trail_reviews_data = json_encode(array_column($trail_reviews, 'review_count'));
             }
         });
 
-        // Visitor Types Pie Chart
+        
         const visitorCtx = document.getElementById('visitorTypesChart').getContext('2d');
         new Chart(visitorCtx, {
             type: 'doughnut',

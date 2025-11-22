@@ -19,16 +19,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (strlen($new_password) >= 6) {
                 $email = $_SESSION['reset_email'];
                 
-                // Update user password (hashed)
+
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
                 $stmt->execute([$hashed_password, $email]);
                 
-                // Delete used reset codes
+
                 $stmt = $pdo->prepare("DELETE FROM password_resets WHERE email = ? AND user_type = 'user'");
                 $stmt->execute([$email]);
                 
-                // Clear session
+
                 unset($_SESSION['reset_email']);
                 unset($_SESSION['verified_reset']);
                 unset($_SESSION['user_type']);

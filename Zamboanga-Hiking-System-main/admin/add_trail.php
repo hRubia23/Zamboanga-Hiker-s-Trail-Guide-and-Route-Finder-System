@@ -46,7 +46,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding: 0;
         }
 
-        /* Header Navigation */
         .header {
             background: linear-gradient(135deg, #1e3a2c, #2d5a3f);
             color: white;
@@ -126,14 +125,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transform: translateY(-2px);
         }
 
-        /* Main Container */
         .container {
             max-width: 900px;
             margin: 0 auto;
             padding: 40px 30px;
         }
 
-        /* Breadcrumb */
         .breadcrumb {
             display: flex;
             align-items: center;
@@ -159,7 +156,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             fill: #7a9d7e;
         }
 
-        /* Form Container */
         .form-container {
             background: white;
             border-radius: 20px;
@@ -206,7 +202,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             opacity: 0.9;
         }
 
-        /* Form Content */
         .form-content {
             padding: 40px;
         }
@@ -266,7 +261,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding-right: 45px;
         }
 
-        /* File Upload */
         .file-upload-wrapper {
             position: relative;
             overflow: hidden;
@@ -319,7 +313,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: block;
         }
 
-        /* Difficulty Preview */
         .difficulty-preview {
             margin-top: 12px;
             padding: 14px 18px;
@@ -353,7 +346,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             color: #c2185b;
         }
 
-        /* Map Container */
         #map {
             width: 100%;
             height: 400px;
@@ -373,7 +365,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-weight: 500;
         }
 
-        /* Form Actions */
         .form-actions {
             display: flex;
             gap: 15px;
@@ -426,14 +417,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transform: translateY(-2px);
         }
 
-        /* Helper Text */
         .helper-text {
             margin-top: 8px;
             font-size: 13px;
             color: #7a9d7e;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -463,7 +452,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="logo-section">
@@ -494,9 +482,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </header>
 
-    <!-- Main Container -->
+
     <div class="container">
-        <!-- Breadcrumb -->
         <div class="breadcrumb">
             <a href="dashboard.php">Dashboard</a>
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -509,7 +496,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <span>Add New Trail</span>
         </div>
 
-        <!-- Form Container -->
         <div class="form-container">
             <div class="form-header">
                 <div class="form-header-content">
@@ -527,7 +513,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <div class="form-content">
                 <form method="POST" enctype="multipart/form-data" id="trailForm">
-                    <!-- Trail Name -->
                     <div class="form-group">
                         <label for="name">
                             Trail Name
@@ -537,7 +522,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="helper-text">Enter the official name of the hiking trail</div>
                     </div>
 
-                    <!-- Description -->
+
                     <div class="form-group">
                         <label for="description">
                             Description
@@ -547,7 +532,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="helper-text">Describe the trail experience, terrain, and what hikers can expect</div>
                     </div>
 
-                    <!-- Location -->
+
                     <div class="form-group">
                         <label for="location">
                             Location
@@ -558,7 +543,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="helper-text">Search and click on the map to set the trail location</div>
                     </div>
 
-                    <!-- Google Map -->
+
                     <div class="form-group">
                         <label>
                             📍 Trail Location on Map
@@ -569,7 +554,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
 
-                    <!-- Difficulty -->
+
                     <div class="form-group">
                         <label for="difficulty">
                             Difficulty Level
@@ -585,7 +570,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="difficulty-preview" id="difficultyPreview"></div>
                     </div>
 
-                    <!-- Image Upload -->
+
                     <div class="form-group">
                         <label for="image">
                             Trail Image
@@ -603,7 +588,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="helper-text">Upload a representative image of the trail (JPG, PNG, max 5MB)</div>
                     </div>
 
-                    <!-- Form Actions -->
+
                     <div class="form-actions">
                         <a href="manage_trails.php" class="btn btn-secondary">
                             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -623,19 +608,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 
-    <!-- Google Maps API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA0_SCP530X1_feONlUZ1xHIiIk_lxodE8&libraries=places&callback=initMap"async defer></script>
     <script>
         let map;
         let marker;
         let autocomplete;
 
-        // Initialize Google Map
+
         function initMap() {
-            // Default center (Zamboanga City)
             const defaultCenter = { lat: 6.9214, lng: 122.0790 };
 
-            // Create map
             map = new google.maps.Map(document.getElementById('map'), {
                 center: defaultCenter,
                 zoom: 12,
@@ -654,7 +636,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ]
             });
 
-            // Add click listener to map
             map.addListener('click', function(event) {
                 const lat = event.latLng.lat();
                 const lng = event.latLng.lng();
@@ -682,7 +663,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 reverseGeocode(lat, lng);
             });
 
-            // Setup autocomplete for location input
             const locationInput = document.getElementById('location');
             autocomplete = new google.maps.places.Autocomplete(locationInput, {
                 types: ['geocode'],
@@ -743,7 +723,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         }
 
-        // File upload preview
         const fileInput = document.getElementById('image');
         const fileName = document.getElementById('fileName');
 
@@ -756,7 +735,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         });
 
-        // Difficulty preview
         const difficultySelect = document.getElementById('difficulty');
         const difficultyPreview = document.getElementById('difficultyPreview');
 

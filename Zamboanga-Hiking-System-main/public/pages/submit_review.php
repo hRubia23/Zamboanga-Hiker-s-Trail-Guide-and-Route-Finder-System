@@ -3,7 +3,7 @@ session_start();
 header('Content-Type: application/json');
 require_once '../../includes/db.php';
 
-// Check if user is logged in
+
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'success' => false,
@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Check if it's a POST request
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
@@ -21,11 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Get POST data
+
 $data = json_decode(file_get_contents('php://input'), true);
 
 if (!$data) {
-    // Try to get from $_POST if JSON decode fails
+
     $data = $_POST;
 }
 
@@ -34,7 +34,7 @@ $rating = $data['rating'] ?? null;
 $comment = $data['comment'] ?? null;
 $user_id = $_SESSION['user_id'];
 
-// Validate inputs
+
 if (!$trail_id || !$rating || !$comment) {
     echo json_encode([
         'success' => false,
@@ -52,7 +52,7 @@ if ($rating < 1 || $rating > 5) {
 }
 
 try {
-    // Insert review with 'pending' status
+
     $stmt = $pdo->prepare("
         INSERT INTO reviews (trail_id, user_id, rating, comment, status, created_at)
         VALUES (?, ?, ?, ?, 'pending', NOW())

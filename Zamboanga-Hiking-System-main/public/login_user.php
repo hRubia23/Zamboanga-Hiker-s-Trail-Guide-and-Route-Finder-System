@@ -2,7 +2,7 @@
 
 session_start();
 
-require_once '../includes/db.php'; // adjust path if needed
+require_once '../includes/db.php'; 
 
 $error = '';
 

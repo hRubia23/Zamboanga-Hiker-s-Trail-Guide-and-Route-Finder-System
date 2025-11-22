@@ -2,19 +2,19 @@
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
 
-// Fetch total trails count
+
 $stmt = $pdo->query("SELECT COUNT(*) as count FROM trails");
 $total_trails = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-// Fetch all registered users
+
 $stmt = $pdo->query("SELECT username, created_at FROM users ORDER BY created_at DESC");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// NEW: Fetch pending reviews count
+
 $stmt = $pdo->query("SELECT COUNT(*) as count FROM reviews WHERE status = 'pending'");
 $pending_reviews_count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-// NEW: Fetch pending reviews with trail and user information
+
 $stmt = $pdo->query("
     SELECT 
         r.id,
@@ -38,7 +38,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trail Admin - Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https:
     <style>
         * {
             margin: 0;
@@ -53,7 +53,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 0;
         }
 
-        /* Header Navigation */
+       
         .header {
             background: linear-gradient(135deg, #1e3a2c, #2d5a3f);
             color: white;
@@ -142,14 +142,14 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: rgba(244, 67, 54, 0.3);
         }
 
-        /* Main Container */
+       
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 40px 30px;
         }
 
-        /* Welcome Section */
+       
         .welcome-section {
             background: white;
             border-radius: 20px;
@@ -189,7 +189,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 16px;
         }
 
-        /* Stats Grid */
+       
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -246,7 +246,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             fill: white;
         }
 
-        /* NEW: Orange icon for pending reviews */
+       
         .stat-icon.pending {
             background: linear-gradient(135deg, #FF9800, #FFB74D);
             box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
@@ -268,7 +268,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-family: 'Merriweather', serif;
         }
 
-        /* Action Cards */
+       
         .actions-section {
             margin-top: 30px;
         }
@@ -386,7 +386,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: white;
         }
 
-        /* NEW: Badge for pending count */
+       
         .badge {
             display: inline-block;
             background: #FF9800;
@@ -398,7 +398,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-left: 8px;
         }
 
-        /* Users Table Section */
+       
         .users-section {
             margin-top: 40px;
             background: white;
@@ -441,14 +441,14 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-bottom: none;
         }
 
-        /* NEW: Star rating display */
+       
         .star-rating {
             color: #FFD700;
             font-size: 16px;
             letter-spacing: 2px;
         }
 
-        /* NEW: Comment preview */
+       
         .comment-preview {
             max-width: 300px;
             overflow: hidden;
@@ -456,7 +456,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             white-space: nowrap;
         }
 
-        /* NEW: Action buttons */
+       
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -496,7 +496,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
         }
 
-        /* Footer */
+       
         .footer {
             text-align: center;
             padding: 30px;
@@ -504,7 +504,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 14px;
         }
 
-        /* Responsive */
+       
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -555,7 +555,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="header-content">
             <div class="logo-section">
                 <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg viewBox="0 0 24 24" xmlns="http:
                         <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                     </svg>
                 </div>
@@ -596,7 +596,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                         </svg>
                     </div>
@@ -610,7 +610,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                         </svg>
                     </div>
@@ -625,7 +625,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon pending">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>
                         </svg>
                     </div>
@@ -639,7 +639,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="stat-card">
                 <div class="stat-header">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
                         </svg>
                     </div>
@@ -657,7 +657,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="action-grid">
                 <a href="manage_trails.php" class="action-card">
                     <div class="action-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                         </svg>
                     </div>
@@ -670,7 +670,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <!-- NEW: Review Management Action Card -->
                 <a href="admin_reviews.php" class="action-card">
                     <div class="action-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>
                         </svg>
                     </div>
@@ -682,7 +682,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <a href="view_analytics.php" class="action-card">
                     <div class="action-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
                         </svg>
                     </div>
@@ -694,7 +694,7 @@ $pending_reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <a href="#" class="action-card">
                     <div class="action-icon">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http:
                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                         </svg>
                     </div>

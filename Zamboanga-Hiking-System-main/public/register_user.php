@@ -16,16 +16,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($first_name) && !empty($last_name) && !empty($username) && !empty($email) && !empty($password) && !empty($confirm_password)) {
         
-        // Validate email format
+        
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = "Please enter a valid email address.";
         } 
-        // Check if passwords match
+        
         elseif ($password !== $confirm_password) {
             $error = "Passwords do not match.";
         } 
         else {
-            // Check if username already exists
+            
             $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
             $stmt->execute([$username]);
             $existing = $stmt->fetch();
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($existing) {
                 $error = "Username already taken.";
             } else {
-                // Check if email already exists
+                
                 $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
                 $stmt->execute([$email]);
                 $existing_email = $stmt->fetch();
@@ -41,16 +41,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($existing_email) {
                     $error = "Email already registered.";
                 } else {
-                    // Generate 6-digit verification code
+                    
                     $verification_code = sprintf("%06d", mt_rand(1, 999999));
                     
-                    // Store verification code in database
+                    
                     $stmt = $pdo->prepare("INSERT INTO verification_codes (email, code) VALUES (?, ?)");
                     $stmt->execute([$email, $verification_code]);
                     
-                    // Send verification email
+                    
                     if (sendVerificationEmail($email, $verification_code)) {
-                        // Store registration data in session
+                        
                         $_SESSION['pending_registration'] = [
                             'first_name' => $first_name,
                             'last_name' => $last_name,
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'password' => password_hash($password, PASSWORD_DEFAULT)
                         ];
                         
-                        // Redirect to verification page
+                        
                         header("Location: verify_email.php");
                         exit();
                     } else {
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><path d="M0,300 Q300,200 600,300 T1200,300 L1200,600 L0,600 Z" fill="rgba(255,255,255,0.03)"/></svg>') repeat-x bottom;
+            background: url('data:image/svg+xml,<svg xmlns="http:
             background-size: cover;
             opacity: 0.5;
             pointer-events: none;
@@ -354,7 +354,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="register-container">
         <div class="register-header">
             <div class="icon-wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <svg xmlns="http:
                     <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
             </div>

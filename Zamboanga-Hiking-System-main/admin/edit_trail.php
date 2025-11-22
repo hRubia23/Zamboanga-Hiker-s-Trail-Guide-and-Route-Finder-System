@@ -231,7 +231,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .form-group select {
             cursor: pointer;
             appearance: none;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2310b981"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-image: url('data:image/svg+xml,<svg xmlns="http:
             background-repeat: no-repeat;
             background-position: right 15px center;
             background-size: 24px;
@@ -481,7 +481,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA0_SCP530X1_feONlUZ1xHiIk_IxodE8&libraries=places&callback=initMap" async defer></script>
+    <script src="https:
     <div class="floating-leaves">
         <div class="leaf" style="left: 10%; animation-duration: 15s; animation-delay: 0s;">🍃</div>
         <div class="leaf" style="left: 30%; animation-duration: 18s; animation-delay: 3s;">🌿</div>
@@ -619,17 +619,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         let marker;
         let autocomplete;
 
-        // Initialize Google Map
+        
         function initMap() {
-            // Default center (Philippines - Zamboanga)
+            
             const defaultCenter = { lat: 6.9214, lng: 122.0790 };
             
-            // Get saved coordinates if they exist
+            
             const savedLat = parseFloat(document.getElementById('latitude').value);
             const savedLng = parseFloat(document.getElementById('longitude').value);
             const initialCenter = (savedLat && savedLng) ? { lat: savedLat, lng: savedLng } : defaultCenter;
 
-            // Create map
+            
             map = new google.maps.Map(document.getElementById('map'), {
                 center: initialCenter,
                 zoom: savedLat && savedLng ? 15 : 12,
@@ -648,7 +648,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ]
             });
 
-            // Add marker if coordinates exist
+            
             if (savedLat && savedLng) {
                 marker = new google.maps.Marker({
                     position: initialCenter,
@@ -660,7 +660,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 updateCoordinatesDisplay(savedLat, savedLng);
 
-                // Update coordinates when marker is dragged
+                
                 marker.addListener('dragend', function(event) {
                     const lat = event.latLng.lat();
                     const lng = event.latLng.lng();
@@ -669,7 +669,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 });
             }
 
-            // Add click listener to map
+            
             map.addListener('click', function(event) {
                 const lat = event.latLng.lat();
                 const lng = event.latLng.lng();
@@ -697,7 +697,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 reverseGeocode(lat, lng);
             });
 
-            // Setup autocomplete for location input
+            
             const locationInput = document.getElementById('locationInput');
             autocomplete = new google.maps.places.Autocomplete(locationInput, {
                 types: ['geocode'],
@@ -762,7 +762,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         }
 
-        // File upload preview
+        
         const imageInput = document.getElementById('imageInput');
         const fileName = document.getElementById('fileName');
         
@@ -774,7 +774,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         });
 
-        // Difficulty selector sync
+        
         const difficultySelect = document.getElementById('difficultySelect');
         const difficultyBadges = document.querySelectorAll('.difficulty-badge');
         
@@ -787,7 +787,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         });
 
-        // Form validation
+        
         const form = document.getElementById('editTrailForm');
         form.addEventListener('submit', (e) => {
             const name = form.querySelector('[name="name"]').value.trim();
@@ -805,7 +805,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 return;
             }
 
-            // Check if location is set
+            
             const lat = document.getElementById('latitude').value;
             const lng = document.getElementById('longitude').value;
             

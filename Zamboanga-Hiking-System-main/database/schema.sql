@@ -10,7 +10,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create default admin account
+
 INSERT INTO users (username, password)
 VALUES ('admin', PASSWORD('admin123'));
 

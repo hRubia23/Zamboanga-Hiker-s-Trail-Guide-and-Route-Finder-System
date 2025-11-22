@@ -2,7 +2,6 @@
 session_start();
 require_once '../includes/db.php';
 
-// Check if there's pending registration
 if (!isset($_SESSION['pending_registration'])) {
     header("Location: register_user.php");
     exit();
@@ -16,7 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $entered_code = trim($_POST['verification_code']);
     
     if (!empty($entered_code)) {
-        // Check verification code
         $stmt = $pdo->prepare("
             SELECT * FROM verification_codes 
             WHERE email = ? 
@@ -30,11 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $verification = $stmt->fetch();
         
         if ($verification) {
-            // Mark code as used
+
             $stmt = $pdo->prepare("UPDATE verification_codes SET is_used = 1 WHERE id = ?");
             $stmt->execute([$verification['id']]);
             
-            // Create user account
+
             $reg_data = $_SESSION['pending_registration'];
             $stmt = $pdo->prepare("
                 INSERT INTO users (first_name, last_name, username, email, password, is_verified) 
@@ -48,10 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $reg_data['password']
             ]);
             
-            // Clear session
             unset($_SESSION['pending_registration']);
             
-            // Redirect to login with success message
             $_SESSION['registration_success'] = "Account created successfully! You can now log in.";
             header("Location: login_user.php");
             exit();
@@ -63,18 +59,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle resend code
+
 if (isset($_GET['resend'])) {
-    // Delete old codes
+
     $stmt = $pdo->prepare("DELETE FROM verification_codes WHERE email = ?");
     $stmt->execute([$email]);
-    
-    // Generate new code
+
     $verification_code = sprintf("%06d", mt_rand(1, 999999));
     $stmt = $pdo->prepare("INSERT INTO verification_codes (email, code) VALUES (?, ?)");
     $stmt->execute([$email, $verification_code]);
     
-    // Send email
     require_once '../includes/email_config.php';
     if (sendVerificationEmail($email, $verification_code)) {
         $success = "A new verification code has been sent to your email.";
@@ -369,19 +363,18 @@ if (isset($_GET['resend'])) {
     </div>
     
     <script>
-        // Auto-format code input (add spaces for readability)
+
         const codeInput = document.getElementById('verification_code');
         codeInput.addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
         
-        // Focus on input on page load
+
         window.addEventListener('load', function() {
             codeInput.focus();
         });
         
-        // Countdown timer (5 minutes)
-        let timeLeft = 300; // 5 minutes in seconds
+        let timeLeft = 300; 
         const timerElement = document.getElementById('timer');
         
         function updateTimer() {
