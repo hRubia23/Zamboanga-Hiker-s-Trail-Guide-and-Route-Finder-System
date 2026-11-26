@@ -2,11 +2,16 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require_once dirname(__DIR__) . '/vendor/autoload.php';
-// OR if manual installation:
-// require 'PHPMailer/src/Exception.php';
-// require 'PHPMailer/src/PHPMailer.php';
-// require 'PHPMailer/src/SMTP.php';
+$vendorAutoload = dirname(__DIR__) . '/vendor/autoload.php';
+$vendorPhpMailer = dirname(__DIR__) . '/vendor/phpmailer/phpmailer/src/PHPMailer.php';
+
+if (is_file($vendorAutoload) && is_file($vendorPhpMailer)) {
+    require_once $vendorAutoload;
+} else {
+    require_once __DIR__ . '/PHPMailer/src/Exception.php';
+    require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
+    require_once __DIR__ . '/PHPMailer/src/SMTP.php';
+}
 
 // =====================
 // SMTP CONFIG CONSTANTS
