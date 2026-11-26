@@ -11,7 +11,7 @@ $trails = $pdo->query("SELECT * FROM trails")->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trail Admin - Manage Trails</title>
-    <link href="https:
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -422,7 +422,7 @@ $trails = $pdo->query("SELECT * FROM trails")->fetchAll();
         <div class="header-content">
             <div class="logo-section">
                 <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http:
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                     </svg>
                 </div>
@@ -454,14 +454,14 @@ $trails = $pdo->query("SELECT * FROM trails")->fetchAll();
         <div class="page-header">
             <div class="page-title">
                 <div class="title-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http:
+                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                     </svg>
                 </div>
                 <h2>Manage Trails</h2>
             </div>
             <a href="add_trail.php" class="add-trail-btn">
-                <svg viewBox="0 0 24 24" xmlns="http:
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
                 Add New Trail
@@ -519,13 +519,13 @@ $trails = $pdo->query("SELECT * FROM trails")->fetchAll();
                 </table>
             <?php else: ?>
                 <div class="empty-state">
-                    <svg viewBox="0 0 24 24" xmlns="http:
+                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z"/>
                     </svg>
                     <h3>No Trails Found</h3>
                     <p>Start by adding your first trail to the system.</p>
                     <a href="add_trail.php" class="add-trail-btn" style="display: inline-flex;">
-                        <svg viewBox="0 0 24 24" xmlns="http:
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                         </svg>
                         Add Your First Trail

@@ -30,7 +30,7 @@ if (!$data) {
 }
 
 $trail_id = $data['trail_id'] ?? null;
-$rating = $data['rating'] ?? null;
+$rating = isset($data['rating']) ? (int)$data['rating'] : null;
 $comment = $data['comment'] ?? null;
 $user_id = $_SESSION['user_id'];
 

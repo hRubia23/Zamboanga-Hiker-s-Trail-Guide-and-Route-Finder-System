@@ -18,8 +18,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $image = basename($_FILES['image']['name']);
         move_uploaded_file($_FILES['image']['tmp_name'], $targetDir . $image);
     }
-    $stmt = $pdo->prepare("UPDATE trails SET name=?, description=?, location=?, difficulty=?, image=? WHERE id=?");
-    $stmt->execute([$name, $description, $location, $difficulty, $image, $id]);
+    $latitude = ($_POST['latitude'] ?? '') !== '' ? $_POST['latitude'] : null;
+    $longitude = ($_POST['longitude'] ?? '') !== '' ? $_POST['longitude'] : null;
+    $highlights = trim($_POST['highlights'] ?? '') ?: null;
+    $distance_km = is_numeric($_POST['distance_km'] ?? '') ? $_POST['distance_km'] : null;
+    $duration_min = is_numeric($_POST['duration_min'] ?? '') ? (int)$_POST['duration_min'] : null;
+    $elevation_m = is_numeric($_POST['elevation_m'] ?? '') ? (int)$_POST['elevation_m'] : null;
+    $tips = trim($_POST['tips'] ?? '') ?: null;
+    $allowedFeatures = ['forest', 'water', 'wildlife', 'photo'];
+    $features = implode(',', array_intersect($_POST['features'] ?? [], $allowedFeatures)) ?: null;
+    $stmt = $pdo->prepare("UPDATE trails SET name=?, description=?, highlights=?, tips=?, features=?, location=?, difficulty=?, latitude=?, longitude=?, distance_km=?, duration_min=?, elevation_m=?, image=? WHERE id=?");
+    $stmt->execute([$name, $description, $highlights, $tips, $features, $location, $difficulty, $latitude, $longitude, $distance_km, $duration_min, $elevation_m, $image, $id]);
     header("Location: manage_trails.php");
     exit();
 }
@@ -231,7 +240,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .form-group select {
             cursor: pointer;
             appearance: none;
-            background-image: url('data:image/svg+xml,<svg xmlns="http:
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2310b981"><path d="M7 10l5 5 5-5z"/></svg>');
             background-repeat: no-repeat;
             background-position: right 15px center;
             background-size: 24px;
@@ -481,7 +490,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
-    <script src="https:
+    <script src="../public/assets/js/google-picker.js"></script>
     <div class="floating-leaves">
         <div class="leaf" style="left: 10%; animation-duration: 15s; animation-delay: 0s;">🍃</div>
         <div class="leaf" style="left: 30%; animation-duration: 18s; animation-delay: 3s;">🌿</div>
@@ -530,6 +539,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
 
+                    <!-- Trail Features -->
+                    <div class="form-group">
+                        <label>
+                            <span class="label-icon">🧭</span>
+                            Trail Features
+                        </label>
+                        <?php $selectedFeatures = explode(',', $trail['features'] ?? ''); ?>
+                        <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="forest" <?= in_array('forest', $selectedFeatures) ? 'checked' : '' ?>> 🌲 Forest Path</label>
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="water" <?= in_array('water', $selectedFeatures) ? 'checked' : '' ?>> 🌊 Water Features</label>
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="wildlife" <?= in_array('wildlife', $selectedFeatures) ? 'checked' : '' ?>> 🦅 Wildlife Viewing</label>
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="photo" <?= in_array('photo', $selectedFeatures) ? 'checked' : '' ?>> 📸 Photo Opportunities</label>
+                        </div>
+                        <div class="helper-text">
+                            <span class="helper-icon">💡</span>
+                            Only the checked features are shown on the trail page
+                        </div>
+                    </div>
+
+                    <!-- Trail Highlights -->
+                    <div class="form-group">
+                        <label>
+                            <span class="label-icon">🌟</span>
+                            Trail Highlights
+                        </label>
+                        <textarea name="highlights" placeholder="One highlight per line"><?= htmlspecialchars($trail['highlights'] ?? '') ?></textarea>
+                        <div class="helper-text">
+                            <span class="helper-icon">💡</span>
+                            Enter one highlight per line. Leave blank to hide this section.
+                        </div>
+                    </div>
+
+                    <!-- Essential Tips -->
+                    <div class="form-group">
+                        <label>
+                            <span class="label-icon">🎒</span>
+                            Essential Tips
+                        </label>
+                        <textarea name="tips" placeholder="One tip per line"><?= htmlspecialchars($trail['tips'] ?? '') ?></textarea>
+                        <div class="helper-text">
+                            <span class="helper-icon">💡</span>
+                            Enter one tip per line. Leave blank to hide this section.
+                        </div>
+                    </div>
+
                     <!-- Location -->
                     <div class="form-group">
                         <label>
@@ -541,7 +595,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="hidden" name="longitude" id="longitude" value="<?= htmlspecialchars($trail['longitude'] ?? '') ?>">
                         <div class="helper-text">
                             <span class="helper-icon">💡</span>
-                            Search and click on the map to set the trail location
+                            Start typing a place and pick a suggestion, or click the map to set the trail location
                         </div>
                     </div>
 
@@ -555,6 +609,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="helper-text">
                             <span class="helper-icon">💡</span>
                             <span id="coordinates-display">Click on the map to set the exact trail location</span>
+                        </div>
+                        <input type="hidden" name="distance_km" id="distance_km" value="<?= htmlspecialchars($trail['distance_km'] ?? '') ?>">
+                        <input type="hidden" name="duration_min" id="duration_min" value="<?= htmlspecialchars($trail['duration_min'] ?? '') ?>">
+                        <input type="hidden" name="elevation_m" id="elevation_m" value="<?= htmlspecialchars($trail['elevation_m'] ?? '') ?>">
+                        <div class="helper-text">
+                            <span class="helper-icon">📊</span>
+                            <span id="stats-display">Stats (distance, walking time, elevation) are calculated automatically once you pin a location</span>
                         </div>
                     </div>
 
@@ -615,150 +676,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <script>
-        let map;
-        let marker;
-        let autocomplete;
-
-        
-        function initMap() {
-            
-            const defaultCenter = { lat: 6.9214, lng: 122.0790 };
-            
-            
-            const savedLat = parseFloat(document.getElementById('latitude').value);
-            const savedLng = parseFloat(document.getElementById('longitude').value);
-            const initialCenter = (savedLat && savedLng) ? { lat: savedLat, lng: savedLng } : defaultCenter;
-
-            
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: initialCenter,
-                zoom: savedLat && savedLng ? 15 : 12,
-                mapTypeId: 'terrain',
-                styles: [
-                    {
-                        featureType: 'poi.park',
-                        elementType: 'geometry.fill',
-                        stylers: [{ color: '#a7f3d0' }]
-                    },
-                    {
-                        featureType: 'landscape.natural',
-                        elementType: 'geometry.fill',
-                        stylers: [{ color: '#d1fae5' }]
-                    }
-                ]
-            });
-
-            
-            if (savedLat && savedLng) {
-                marker = new google.maps.Marker({
-                    position: initialCenter,
-                    map: map,
-                    draggable: true,
-                    animation: google.maps.Animation.DROP,
-                    title: 'Trail Location'
-                });
-
-                updateCoordinatesDisplay(savedLat, savedLng);
-
-                
-                marker.addListener('dragend', function(event) {
-                    const lat = event.latLng.lat();
-                    const lng = event.latLng.lng();
-                    updateCoordinates(lat, lng);
-                    reverseGeocode(lat, lng);
-                });
-            }
-
-            
-            map.addListener('click', function(event) {
-                const lat = event.latLng.lat();
-                const lng = event.latLng.lng();
-                
-                if (marker) {
-                    marker.setPosition(event.latLng);
-                } else {
-                    marker = new google.maps.Marker({
-                        position: event.latLng,
-                        map: map,
-                        draggable: true,
-                        animation: google.maps.Animation.DROP,
-                        title: 'Trail Location'
-                    });
-
-                    marker.addListener('dragend', function(event) {
-                        const lat = event.latLng.lat();
-                        const lng = event.latLng.lng();
-                        updateCoordinates(lat, lng);
-                        reverseGeocode(lat, lng);
-                    });
-                }
-                
-                updateCoordinates(lat, lng);
-                reverseGeocode(lat, lng);
-            });
-
-            
-            const locationInput = document.getElementById('locationInput');
-            autocomplete = new google.maps.places.Autocomplete(locationInput, {
-                types: ['geocode'],
-                componentRestrictions: { country: 'ph' }
-            });
-
-            autocomplete.addListener('place_changed', function() {
-                const place = autocomplete.getPlace();
-                
-                if (!place.geometry) {
-                    return;
-                }
-
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
-
-                map.setCenter(place.geometry.location);
-                map.setZoom(15);
-
-                if (marker) {
-                    marker.setPosition(place.geometry.location);
-                } else {
-                    marker = new google.maps.Marker({
-                        position: place.geometry.location,
-                        map: map,
-                        draggable: true,
-                        animation: google.maps.Animation.DROP,
-                        title: 'Trail Location'
-                    });
-
-                    marker.addListener('dragend', function(event) {
-                        const lat = event.latLng.lat();
-                        const lng = event.latLng.lng();
-                        updateCoordinates(lat, lng);
-                        reverseGeocode(lat, lng);
-                    });
-                }
-
-                updateCoordinates(lat, lng);
-            });
-        }
-
-        function updateCoordinates(lat, lng) {
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
-            updateCoordinatesDisplay(lat, lng);
-        }
-
-        function updateCoordinatesDisplay(lat, lng) {
-            document.getElementById('coordinates-display').innerHTML = 
-                `<strong>📍 Coordinates:</strong> Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)}`;
-        }
-
-        function reverseGeocode(lat, lng) {
-            const geocoder = new google.maps.Geocoder();
-            const latlng = { lat: lat, lng: lng };
-
-            geocoder.geocode({ location: latlng }, function(results, status) {
-                if (status === 'OK' && results[0]) {
-                    document.getElementById('locationInput').value = results[0].formatted_address;
-                }
+        function initTrailMap() {
+            initTrailPicker({
+                mapId: 'map',
+                locationId: 'locationInput',
+                latId: 'latitude',
+                lngId: 'longitude',
+                displayId: 'coordinates-display',
+                distanceId: 'distance_km',
+                durationId: 'duration_min',
+                elevationId: 'elevation_m',
+                statsDisplayId: 'stats-display'
             });
         }
 
@@ -818,5 +746,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         });
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?= GOOGLE_MAPS_API_KEY ?>&libraries=places&callback=initTrailMap" async defer></script>
 </body>
 </html>

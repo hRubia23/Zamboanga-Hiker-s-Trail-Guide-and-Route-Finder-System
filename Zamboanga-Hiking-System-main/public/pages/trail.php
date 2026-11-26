@@ -83,13 +83,21 @@ try {
 // ============================================
 
 // Set default values for optional fields
-$trail['distance'] = $trail['distance'] ?? '5.2';
-$trail['duration'] = $trail['duration'] ?? '2-3';
-$trail['elevation'] = $trail['elevation'] ?? '450';
+require_once '../../includes/functions.php';
 $trail['difficulty'] = $trail['difficulty'] ?? 'moderate';
 $trail['location'] = $trail['location'] ?? 'Nature Reserve';
-$trail['rating'] = $trail['rating'] ?? '4.8';
-$trail['reviews'] = $trail['reviews'] ?? '287';
+
+// Stats are computed automatically from the pinned location (see admin map picker)
+$statDistance = format_trail_distance($trail['distance_km'] ?? null);
+$statDuration = format_trail_duration($trail['duration_min'] ?? null);
+$statElevation = format_trail_elevation($trail['elevation_m'] ?? null);
+
+// Rating and review count come from approved reviews only
+$ratingStmt = $pdo->prepare("SELECT COUNT(*) AS total, AVG(rating) AS avg_rating FROM reviews WHERE trail_id = ? AND status = 'approved'");
+$ratingStmt->execute([$id]);
+$ratingRow = $ratingStmt->fetch();
+$trail['reviews'] = (int)($ratingRow['total'] ?? 0);
+$trail['rating'] = $trail['reviews'] > 0 ? number_format((float)$ratingRow['avg_rating'], 1) : null;
 
 // Get trail image - check database first, then fallback
 $trailImage = '';
@@ -884,6 +892,22 @@ nav span {
 }
 
 /* Map Modal Styles */
+.star {
+    font-size: 2.2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #9ca3af;
+    user-select: none;
+    transition: transform 0.1s;
+}
+
+.star.filled {
+    color: #fbbf24;
+}
+
+.star:hover {
+    transform: scale(1.15);
+}
 .map-modal {
     display: none;
     position: fixed;
@@ -1026,6 +1050,53 @@ nav span {
     border: 2px solid #22c55e;
 }
 
+.route-options {
+    position: absolute;
+    top: 104px;
+    left: 10px;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 230px;
+}
+
+.route-options.active {
+    display: flex;
+}
+
+.route-option {
+    background: white;
+    border: 2px solid #d1d5db;
+    border-radius: 10px;
+    padding: 5px 10px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.route-option.selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.route-option .route-time {
+    font-weight: 800;
+    color: #1e3a8a;
+    font-size: 0.85rem;
+}
+
+.route-option .route-meta {
+    font-size: 0.72rem;
+    color: #475569;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 </style>
 
 </style>
@@ -1078,21 +1149,27 @@ nav span {
                     <?= htmlspecialchars($trail['location']) ?>
                 </p>
                 <div class="trail-quick-stats">
+                    <?php if ($statDistance): ?>
                     <div class="quick-stat">
                         <span class="quick-stat-icon">📏</span>
-                        <span><?= htmlspecialchars($trail['distance']) ?> km</span>
+                        <span><?= htmlspecialchars($statDistance) ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if ($statDuration): ?>
                     <div class="quick-stat">
                         <span class="quick-stat-icon">⏱️</span>
-                        <span><?= htmlspecialchars($trail['duration']) ?> hours</span>
+                        <span><?= htmlspecialchars($statDuration) ?></span>
                     </div>
+                    <?php endif; ?>
+                    <?php if ($statElevation): ?>
                     <div class="quick-stat">
                         <span class="quick-stat-icon">⛰️</span>
-                        <span><?= htmlspecialchars($trail['elevation']) ?>m gain</span>
+                        <span><?= htmlspecialchars($statElevation) ?> elevation</span>
                     </div>
+                    <?php endif; ?>
                     <div class="quick-stat">
-                        <span class="quick-stat-icon">🥾</span>
-                        <span>Hiking Trail</span>
+                        <span class="quick-stat-icon">🎯</span>
+                        <span><?= ucfirst(htmlspecialchars($trail['difficulty'])) ?></span>
                     </div>
                 </div>
             </div>
@@ -1104,44 +1181,43 @@ nav span {
             <div>
                 <div class="trail-content">
                     <h2 class="section-title">Trail Overview</h2>
-                    <p class="trail-description">
-                        <?php
-                        $description = !empty($trail['description'])
-                            ? $trail['description']
-                            : 'Embark on an unforgettable journey through pristine wilderness. This trail offers breathtaking views, diverse ecosystems, and an immersive nature experience that will leave you refreshed and inspired. Perfect for adventurers seeking to connect with the great outdoors while enjoying stunning panoramic vistas and encountering local wildlife in their natural habitat.';
-                        echo nl2br(htmlspecialchars($description));
-                        ?>
-                    </p>
+                    <?php if (!empty(trim($trail['description'] ?? ''))): ?>
+                    <p class="trail-description"><?= nl2br(htmlspecialchars($trail['description'])) ?></p>
+                    <?php endif; ?>
 
+                    <?php
+                    $featureMap = [
+                        'forest' => ['🌲', 'Forest Path'],
+                        'water' => ['🌊', 'Water Features'],
+                        'wildlife' => ['🦅', 'Wildlife Viewing'],
+                        'photo' => ['📸', 'Photo Opportunities'],
+                    ];
+                    $trailFeatures = array_filter(explode(',', $trail['features'] ?? ''), fn($f) => isset($featureMap[$f]));
+                    $highlightLines = array_filter(array_map('trim', preg_split('/\R/', $trail['highlights'] ?? '')), 'strlen');
+                    $tipLines = array_filter(array_map('trim', preg_split('/\R/', $trail['tips'] ?? '')), 'strlen');
+                    ?>
+
+                    <?php if ($trailFeatures): ?>
                     <div class="trail-features-grid">
+                        <?php foreach ($trailFeatures as $f): ?>
                         <div class="feature-card">
-                            <span class="feature-icon">🌲</span>
-                            <div class="feature-label">Forest Path</div>
+                            <span class="feature-icon"><?= $featureMap[$f][0] ?></span>
+                            <div class="feature-label"><?= $featureMap[$f][1] ?></div>
                         </div>
-                        <div class="feature-card">
-                            <span class="feature-icon">🌊</span>
-                            <div class="feature-label">Water Features</div>
-                        </div>
-                        <div class="feature-card">
-                            <span class="feature-icon">🦅</span>
-                            <div class="feature-label">Wildlife Viewing</div>
-                        </div>
-                        <div class="feature-card">
-                            <span class="feature-icon">📸</span>
-                            <div class="feature-label">Photo Opportunities</div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
+                    <?php endif; ?>
 
+                    <?php if ($highlightLines): ?>
                     <div class="trail-highlights">
                         <h3 class="highlights-title">🌟 Trail Highlights</h3>
                         <ul class="highlights-list">
-                            <li>Spectacular panoramic views from multiple scenic viewpoints</li>
-                            <li>Well-maintained trails with clear signage throughout</li>
-                            <li>Diverse flora and fauna with excellent wildlife spotting opportunities</li>
-                            <li>Natural water sources and refreshing stream crossings</li>
-                            <li>Perfect for photography enthusiasts and nature lovers</li>
+                            <?php foreach ($highlightLines as $line): ?>
+                            <li><?= htmlspecialchars($line) ?></li>
+                            <?php endforeach; ?>
                         </ul>
                     </div>
+                    <?php endif; ?>
 
                     <?php if(!empty($trail['image'])): ?>
                     <div class="trail-gallery">
@@ -1156,88 +1232,18 @@ nav span {
                     </div>
                     <?php endif; ?>
                 </div>
-            </div>
 
-            <!-- Right Column - Sidebar -->
-            <div class="trail-sidebar">
-                <div class="sidebar-card">
-                    <h3 class="sidebar-title">Trail Stats</h3>
-                    <div class="stats-list">
-                        <div class="stat-item">
-                            <span class="stat-label">
-                                <span class="stat-label-icon">📏</span>
-                                Distance
-                            </span>
-                            <span class="stat-value"><?= htmlspecialchars($trail['distance']) ?> km</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">
-                                <span class="stat-label-icon">⏱️</span>
-                                Duration
-                            </span>
-                            <span class="stat-value"><?= htmlspecialchars($trail['duration']) ?> hrs</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">
-                                <span class="stat-label-icon">⛰️</span>
-                                Elevation Gain
-                            </span>
-                            <span class="stat-value"><?= htmlspecialchars($trail['elevation']) ?>m</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">
-                                <span class="stat-label-icon">🎯</span>
-                                Difficulty
-                            </span>
-                            <span class="stat-value"><?= ucfirst(htmlspecialchars($trail['difficulty'])) ?></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">
-                                <span class="stat-label-icon">🚶</span>
-                                Route Type
-                            </span>
-                            <span class="stat-value">Loop</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sidebar-card rating-card">
-                    <h3 class="sidebar-title">Trail Rating</h3>
-                    <span class="rating-number"><?= htmlspecialchars($trail['rating']) ?></span>
-                    <span class="rating-stars">⭐⭐⭐⭐⭐</span>
-                    <p class="rating-count"><?= htmlspecialchars($trail['reviews']) ?> reviews from hikers</p>
-                </div>
-
-                <div class="sidebar-card">
-                    <div class="weather-widget">
-                        <div class="weather-icon">⛅</div>
-                        <div class="weather-temp">24°C</div>
-                        <div class="weather-desc">Perfect hiking weather</div>
-                    </div>
-                </div>
-
-                <div class="sidebar-card">
-                    <h3 class="sidebar-title">Essential Tips</h3>
-                    <ul class="tips-list">
-                        <li>Bring plenty of water and snacks</li>
-                        <li>Wear appropriate hiking boots</li>
-                        <li>Start early to avoid crowds</li>
-                        <li>Check weather conditions before hiking</li>
-                        <li>Pack sunscreen and insect repellent</li>
-                    </ul>
-                </div>
-                               
-                <!-- Display Approved Reviews FIRST -->
-                <div class="sidebar-card">
+                <!-- Hiker Reviews -->
+                <div class="sidebar-card" style="margin-top:24px;">
                     <h3 class="sidebar-title">💬 Hiker Reviews</h3>
                     <div id="reviewsList" style="max-height:600px; overflow-y:auto;">
                         <!-- Reviews will load here -->
                     </div>
                 </div>
 
-                <!-- User Review Form Section SECOND -->
+                <!-- Leave a Review -->
                 <?php if (isset($_SESSION['user_id'])): ?>
-                <div class="sidebar-card">
+                <div class="sidebar-card" style="margin-top:24px;">
                     <h3 class="sidebar-title">📝 Leave a Review</h3>
                    
                     <form id="reviewForm" style="display:flex; flex-direction:column; gap:16px;">
@@ -1247,12 +1253,12 @@ nav span {
                         <!-- Star Rating -->
                         <div>
                             <label style="display:block; font-weight:700; color:#15803d; margin-bottom:8px;">Your Rating:</label>
-                            <div style="display:flex; gap:8px;">
-                                <span class="star" data-value="1" style="font-size:2rem; cursor:pointer; color:#d1d5db;">⭐</span>
-                                <span class="star" data-value="2" style="font-size:2rem; cursor:pointer; color:#d1d5db;">⭐</span>
-                                <span class="star" data-value="3" style="font-size:2rem; cursor:pointer; color:#d1d5db;">⭐</span>
-                                <span class="star" data-value="4" style="font-size:2rem; cursor:pointer; color:#d1d5db;">⭐</span>
-                                <span class="star" data-value="5" style="font-size:2rem; cursor:pointer; color:#d1d5db;">⭐</span>
+                            <div id="starRating" style="display:flex; gap:6px;" role="radiogroup" aria-label="Your rating">
+                                <span class="star" data-value="1">☆</span>
+                                <span class="star" data-value="2">☆</span>
+                                <span class="star" data-value="3">☆</span>
+                                <span class="star" data-value="4">☆</span>
+                                <span class="star" data-value="5">☆</span>
                             </div>
                             <input type="hidden" id="rating" name="rating" required>
                             <span id="ratingError" style="color:#dc2626; font-size:0.875rem; display:none;">Please select a rating</span>
@@ -1282,11 +1288,91 @@ nav span {
                     <div id="reviewMessage" style="margin-top:16px; display:none;"></div>
                 </div>
                 <?php else: ?>
-                <div class="sidebar-card" style="text-align:center; padding:30px;">
+                <div class="sidebar-card" style="text-align:center; padding:30px; margin-top:24px;">
                     <p style="color:#15803d; font-weight:600; margin-bottom:16px;">Login to leave a review</p>
                     <a href="<?= BASE_URL ?>login_user.php" class="btn btn-primary" style="display:inline-block;">
                         Login Now
                     </a>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Right Column - Sidebar -->
+            <div class="trail-sidebar">
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Trail Stats</h3>
+                    <div class="stats-list">
+                        <?php if ($statDistance): ?>
+                        <div class="stat-item">
+                            <span class="stat-label">
+                                <span class="stat-label-icon">📏</span>
+                                Distance
+                            </span>
+                            <span class="stat-value"><?= htmlspecialchars($statDistance) ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($statDuration): ?>
+                        <div class="stat-item">
+                            <span class="stat-label">
+                                <span class="stat-label-icon">⏱️</span>
+                                Walking Time
+                            </span>
+                            <span class="stat-value"><?= htmlspecialchars($statDuration) ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($statElevation): ?>
+                        <div class="stat-item">
+                            <span class="stat-label">
+                                <span class="stat-label-icon">⛰️</span>
+                                Elevation
+                            </span>
+                            <span class="stat-value"><?= htmlspecialchars($statElevation) ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <div class="stat-item">
+                            <span class="stat-label">
+                                <span class="stat-label-icon">🎯</span>
+                                Difficulty
+                            </span>
+                            <span class="stat-value"><?= ucfirst(htmlspecialchars($trail['difficulty'])) ?></span>
+                        </div>
+                    </div>
+                    <?php if ($statDistance || $statDuration): ?>
+                    <p style="margin-top:12px; font-size:0.75rem; color:#64748b; font-weight:600;">Distance and walking time are measured from Zamboanga City center.</p>
+                    <?php endif; ?>
+                </div>
+
+                <div class="sidebar-card rating-card" id="ratingCard">
+                    <h3 class="sidebar-title">Trail Rating</h3>
+                    <div id="ratingContent">
+                    <?php if ($trail['rating'] !== null): ?>
+                    <span class="rating-number"><?= htmlspecialchars($trail['rating']) ?></span>
+                    <span class="rating-stars"><?= str_repeat('⭐', (int)round((float)$trail['rating'])) ?></span>
+                    <p class="rating-count"><?= $trail['reviews'] ?> review<?= $trail['reviews'] == 1 ? '' : 's' ?> from hikers</p>
+                    <?php else: ?>
+                    <p class="rating-count">No ratings yet. Be the first to review this trail!</p>
+                    <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if ($tipLines): ?>
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Essential Tips</h3>
+                    <ul class="tips-list">
+                        <?php foreach ($tipLines as $line): ?>
+                        <li><?= htmlspecialchars($line) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($trail['latitude']) && !empty($trail['longitude'])): ?>
+                <div class="sidebar-card">
+                    <div class="weather-widget" id="weatherWidget">
+                        <div class="weather-icon" id="weatherIcon">⏳</div>
+                        <div class="weather-temp" id="weatherTemp">--</div>
+                        <div class="weather-desc" id="weatherDesc">Loading weather...</div>
+                    </div>
                 </div>
                 <?php endif; ?>
 
@@ -1317,13 +1403,14 @@ nav span {
             <!-- Google Map with Directions -->
             <div id="map" style="width:100%; height:calc(100% - 120px);"></div>
             <div id="trackingStatus" class="tracking-status"></div>
+            <div id="routeOptions" class="route-options"></div>
             <div class="tracking-controls">
                 <button id="trackingBtn" class="tracking-btn" onclick="toggleTracking()">📍 Start Live Tracking</button>
                 <button class="tracking-btn" onclick="centerOnUser()">🎯 Center on Me</button>
             </div>
             <div style="background:#f0fdf4; padding:15px; text-align:center;">
                 <p style="color:#15803d; font-weight:600; margin:0;">
-                    📌 Blue route shows the hiking direction from your location
+                    📌 Blue route is selected. Tap a gray route to switch. The map follows you as you move.
                 </p>
             </div>
         </div>
@@ -1331,55 +1418,42 @@ nav span {
 
     </div> <!-- End of container -->
 
-    <!-- Map Modal - ADD THIS ENTIRE SECTION -->
-    <div id="mapModal" class="map-modal">
-        <div class="map-modal-content" style="max-width: 1200px; height: 90vh;">
-            <span class="map-modal-close" onclick="closeMapModal()">×</span>
-            <div style="background:#15803d; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0; font-size:1.2rem;">📍 Directions to <?= htmlspecialchars($trail['name']) ?></h3>
-                <button onclick="toggleFullscreen()" 
-                    style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:700;">
-                    ⛶ Fullscreen
-                </button>
-            </div>
-            <div id="map" style="width:100%; height:calc(100% - 120px);"></div>
-            <div style="background:#f0fdf4; padding:15px; text-align:center;">
-                <p style="color:#15803d; font-weight:600; margin:0;">
-                    📌 Blue route shows the hiking direction from your location
-                </p>
-            </div>
-        </div>
-    </div>
-
-<!-- Google Maps API Script -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBmesPIzzfeUhiFP3WGfL5myMimx0wdVbo&libraries=places"></script>
+<!-- Google Maps -->
+<script src="https://maps.googleapis.com/maps/api/js?key=<?= GOOGLE_MAPS_API_KEY ?>"></script>
 
 <!-- Scripts -->
 <script>
 let map;
 let directionsService;
-let directionsRenderer;
+let destMarker;
 
-// Star Rating System
+// Star Rating System: outline stars by default, filled up to the selected value
 const stars = document.querySelectorAll('.star');
 const ratingInput = document.getElementById('rating');
 const ratingError = document.getElementById('ratingError');
 
+function paintStars(count) {
+    stars.forEach(s => {
+        const filled = parseInt(s.getAttribute('data-value'), 10) <= count;
+        s.textContent = filled ? '★' : '☆';
+        s.classList.toggle('filled', filled);
+    });
+}
+
 if(stars.length > 0) {
     stars.forEach(star => {
         star.addEventListener('click', function() {
-            const value = this.getAttribute('data-value');
+            const value = parseInt(this.getAttribute('data-value'), 10);
             ratingInput.value = value;
             ratingError.style.display = 'none';
-           
-            stars.forEach(s => {
-                if (s.getAttribute('data-value') <= value) {
-                    s.style.color = '#fbbf24';
-                } else {
-                    s.style.color = '#d1d5db';
-                }
-            });
+            paintStars(value);
         });
+        star.addEventListener('mouseenter', function() {
+            paintStars(parseInt(this.getAttribute('data-value'), 10));
+        });
+    });
+    document.getElementById('starRating').addEventListener('mouseleave', function() {
+        paintStars(parseInt(ratingInput.value, 10) || 0);
     });
 }
 
@@ -1417,7 +1491,9 @@ if(reviewForm) {
             if (data.success) {
                 messageDiv.innerHTML = '<div style="background:#dcfce7; border:2px solid #22c55e; color:#15803d; padding:14px; border-radius:12px; font-weight:600;">✅ ' + data.message + '</div>';
                 reviewForm.reset();
-                stars.forEach(s => s.style.color = '#d1d5db');
+                ratingInput.value = '';
+                paintStars(0);
+                loadReviews();
                 
                 setTimeout(() => {
                     messageDiv.style.display = 'none';
@@ -1436,27 +1512,44 @@ if(reviewForm) {
 }
 
 // Load Approved Reviews
+function updateRatingCard(average, count) {
+    const el = document.getElementById('ratingContent');
+    if (!el) return;
+    if (count > 0 && average !== null) {
+        const filled = Math.round(average);
+        el.innerHTML =
+            '<span class="rating-number">' + Number(average).toFixed(1) + '</span>' +
+            '<span class="rating-stars">' + '⭐'.repeat(filled) + '</span>' +
+            '<p class="rating-count">' + count + ' review' + (count === 1 ? '' : 's') + ' from hikers</p>';
+    } else {
+        el.innerHTML = '<p class="rating-count">No ratings yet. Be the first to review this trail!</p>';
+    }
+}
+
 function loadReviews() {
     const trailId = '<?= $id ?>';
    
     fetch('../get_reviews.php?trail_id=' + trailId)
         .then(response => response.json())
         .then(data => {
+            if (data.success) updateRatingCard(data.rating_average, data.rating_count);
             const reviewsList = document.getElementById('reviewsList');
            
             if (data.success && data.reviews && data.reviews.length > 0) {
+                const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                 reviewsList.innerHTML = data.reviews.map(review => `
                     <div style="border-bottom:2px solid #dcfce7; padding:18px 0;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <div>
-                                <span style="font-weight:700; color:#14532d;">${review.username}</span>
+                                <span style="font-weight:700; color:#14532d;">${esc(review.username)}</span>
                                 <span style="font-size:0.85rem; color:#64748b; margin-left:8px;">${new Date(review.created_at).toLocaleDateString()}</span>
+                                ${review.status === 'pending' ? '<span style="margin-left:8px; font-size:0.75rem; font-weight:700; color:#b45309; background:#fef3c7; padding:2px 8px; border-radius:999px;">Pending approval</span>' : ''}
                             </div>
-                            <div style="color:#fbbf24; font-size:1.1rem;">
-                                ${'⭐'.repeat(review.rating)}
+                            <div style="color:#fbbf24; font-size:1.1rem; letter-spacing:2px;">
+                                ${'★'.repeat(review.rating)}<span style="color:#9ca3af;">${'☆'.repeat(5 - review.rating)}</span>
                             </div>
                         </div>
-                        <p style="color:#334155; line-height:1.6; font-weight:500;">${review.comment}</p>
+                        <p style="color:#334155; line-height:1.6; font-weight:500;">${esc(review.comment)}</p>
                     </div>
                 `).join('');
             } else {
@@ -1471,6 +1564,34 @@ function loadReviews() {
 
 // Load reviews on page load
 loadReviews();
+// Keep reviews and rating current without a page refresh (e.g. after an admin approves a review)
+setInterval(loadReviews, 15000);
+
+// Live weather for the trail location (Open-Meteo, no API key)
+(function loadWeather() {
+    const widget = document.getElementById('weatherWidget');
+    if (!widget) return;
+    const lat = <?= json_encode($trail['latitude']) ?>;
+    const lng = <?= json_encode($trail['longitude']) ?>;
+    const codes = {
+        0: ['☀️', 'Clear sky'], 1: ['🌤️', 'Mostly clear'], 2: ['⛅', 'Partly cloudy'], 3: ['☁️', 'Overcast'],
+        45: ['🌫️', 'Foggy'], 48: ['🌫️', 'Foggy'],
+        51: ['🌦️', 'Light drizzle'], 53: ['🌦️', 'Drizzle'], 55: ['🌦️', 'Heavy drizzle'],
+        61: ['🌧️', 'Light rain'], 63: ['🌧️', 'Rain'], 65: ['🌧️', 'Heavy rain'],
+        80: ['🌦️', 'Rain showers'], 81: ['🌧️', 'Rain showers'], 82: ['🌧️', 'Heavy showers'],
+        95: ['⛈️', 'Thunderstorm'], 96: ['⛈️', 'Thunderstorm'], 99: ['⛈️', 'Thunderstorm']
+    };
+    fetch('https://api.open-meteo.com/v1/forecast?current=temperature_2m,weather_code&timezone=auto&latitude=' + lat + '&longitude=' + lng)
+        .then(r => r.json())
+        .then(data => {
+            const c = data.current;
+            const w = codes[c.weather_code] || ['🌡️', 'Current conditions'];
+            document.getElementById('weatherIcon').textContent = w[0];
+            document.getElementById('weatherTemp').textContent = Math.round(c.temperature_2m) + '°C';
+            document.getElementById('weatherDesc').textContent = w[1];
+        })
+        .catch(() => { widget.closest('.sidebar-card').style.display = 'none'; });
+})();
 
 // Map Modal Functions
 function openMapModal(e){
@@ -1505,99 +1626,148 @@ function openMapModal(e){
     }
 }
 
+let routePolylines = [];
+let routeResults = [];
+let selectedRoute = 0;
+let destPos = null;
+let lastRoutePos = null;
+let lastRouteTime = 0;
+let routeFitted = false;
+let routeRequestPending = false;
+let followUser = true;
+
+function distanceMeters(a, b) {
+    const R = 6371000, rad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+}
+
 function initializeMap(destLat, destLng, trailName) {
-    // Initialize map centered on trail
+    destPos = { lat: destLat, lng: destLng };
+    routePolylines = [];
+    routeResults = [];
+    selectedRoute = 0;
+    lastRoutePos = null;
+    lastRouteTime = 0;
+    routeFitted = false;
+    routeRequestPending = false;
+    followUser = true;
+
     map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: destLat, lng: destLng },
+        center: destPos,
         zoom: 13,
-        mapTypeId: 'terrain'
+        mapTypeId: 'terrain',
+        fullscreenControl: false,
+        streetViewControl: false,
+        mapTypeControlOptions: { position: google.maps.ControlPosition.TOP_RIGHT }
     });
-    
-    // Initialize directions service and renderer
+
     directionsService = new google.maps.DirectionsService();
-    directionsRenderer = new google.maps.DirectionsRenderer({
-        map: map,
-        suppressMarkers: false,
-        polylineOptions: {
-            strokeColor: '#2563eb',
-            strokeWeight: 6,
-            strokeOpacity: 0.8
-        }
-    });
-    
-    // Get user's current location
+    destMarker = new google.maps.Marker({ position: destPos, map: map, title: trailName });
+
+    // Dragging the map pauses auto-follow; "Center on Me" resumes it
+    map.addListener('dragstart', function() { followUser = false; });
+
+    const options = document.getElementById('routeOptions');
+    options.innerHTML = '';
+    options.classList.remove('active');
+
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-                
-                // Calculate and display route
-                calculateRoute(userLat, userLng, destLat, destLng);
-            },
-            function(error) {
-                console.error('Geolocation error:', error);
-                // If location fails, just show the destination marker
-                showDestinationOnly(destLat, destLng, trailName);
-            }
-        );
+        startTracking();
     } else {
-        // Browser doesn't support geolocation
         showDestinationOnly(destLat, destLng, trailName);
     }
 }
 
-function calculateRoute(startLat, startLng, endLat, endLng) {
-    const origin = new google.maps.LatLng(startLat, startLng);
-    const destination = new google.maps.LatLng(endLat, endLng);
-    
-    const request = {
+function requestRoutes(origin) {
+    routeRequestPending = true;
+    directionsService.route({
         origin: origin,
-        destination: destination,
+        destination: destPos,
         travelMode: google.maps.TravelMode.WALKING,
+        provideRouteAlternatives: true,
         unitSystem: google.maps.UnitSystem.METRIC
-    };
-    
-    directionsService.route(request, function(result, status) {
-        if (status === 'OK') {
-            directionsRenderer.setDirections(result);
-            
-            const route = result.routes[0].legs[0];
-            console.log('Distance:', route.distance.text);
-            console.log('Duration:', route.duration.text);
-        } else {
+    }, function(result, status) {
+        routeRequestPending = false;
+        if (!map) return;
+        lastRoutePos = origin;
+        lastRouteTime = Date.now();
+
+        if (status !== 'OK') {
             console.error('Directions request failed:', status);
-            showDestinationOnly(endLat, endLng, 'Trail Location');
+            if (!routeFitted) showDestinationOnly(destPos.lat, destPos.lng, 'Trail Location');
+            return;
+        }
+
+        routeResults = result.routes;
+        selectedRoute = Math.min(selectedRoute, routeResults.length - 1);
+        drawRoutes();
+
+        if (!routeFitted) {
+            map.fitBounds(routeResults[selectedRoute].bounds, 70);
+            routeFitted = true;
         }
     });
 }
 
-function showDestinationOnly(lat, lng, name) {
-    const position = { lat: lat, lng: lng };
-    
-    new google.maps.Marker({
-        position: position,
-        map: map,
-        title: name,
-        icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 10,
-            fillColor: '#16a34a',
-            fillOpacity: 1,
-            strokeColor: '#fff',
-            strokeWeight: 3
-        }
+function drawRoutes() {
+    routePolylines.forEach(p => p.setMap(null));
+    routePolylines = routeResults.map(function(route, i) {
+        const selected = i === selectedRoute;
+        const line = new google.maps.Polyline({
+            path: route.overview_path,
+            map: map,
+            strokeColor: selected ? '#2563eb' : '#9ca3af',
+            strokeWeight: selected ? 7 : 5,
+            strokeOpacity: selected ? 0.9 : 0.8,
+            zIndex: selected ? 2 : 1
+        });
+        line.addListener('click', function() { selectRoute(i); });
+        return line;
     });
-    
-    map.setCenter(position);
+    renderRouteOptions();
+}
+
+function selectRoute(i) {
+    selectedRoute = i;
+    drawRoutes();
+}
+
+function renderRouteOptions() {
+    const box = document.getElementById('routeOptions');
+    box.innerHTML = '';
+    routeResults.forEach(function(route, i) {
+        const leg = route.legs[0];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'route-option' + (i === selectedRoute ? ' selected' : '');
+        const time = document.createElement('div');
+        time.className = 'route-time';
+        time.textContent = leg.duration.text;
+        const meta = document.createElement('div');
+        meta.className = 'route-meta';
+        meta.textContent = leg.distance.text + (route.summary ? ' • via ' + route.summary : '');
+        meta.title = meta.textContent;
+        btn.appendChild(time);
+        btn.appendChild(meta);
+        btn.addEventListener('click', function() { selectRoute(i); });
+        box.appendChild(btn);
+    });
+    box.classList.toggle('active', routeResults.length > 0);
+}
+
+function showDestinationOnly(lat, lng, name) {
+    if (!map) return;
+    map.setCenter({ lat: lat, lng: lng });
     map.setZoom(15);
 }
 
 function closeMapModal(){
     document.getElementById('mapModal').style.display = 'none';
-    if(map) {
-        map = null;
-    }
+    routePolylines = [];
+    routeResults = [];
+    map = null;
 }
 
 function toggleFullscreen() {
@@ -1649,42 +1819,54 @@ function startTracking() {
     }
     
     isTracking = true;
+    followUser = true;
     updateTrackingUI();
     
     watchId = navigator.geolocation.watchPosition(
         function(position) {
-            const userPos = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-            };
+            if (!map) return;
+            const userPos = { lat: position.coords.latitude, lng: position.coords.longitude };
             
-            if (userMarker) userMarker.setMap(null);
-            if (userAccuracyCircle) userAccuracyCircle.setMap(null);
+            if (!userMarker) {
+                userMarker = new google.maps.Marker({
+                    position: userPos,
+                    map: map,
+                    title: 'You are here',
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: '#4285F4',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 3
+                    },
+                    zIndex: 999
+                });
+                userAccuracyCircle = new google.maps.Circle({
+                    center: userPos,
+                    radius: position.coords.accuracy,
+                    map: map,
+                    fillColor: '#4285F4',
+                    fillOpacity: 0.15,
+                    strokeColor: '#4285F4',
+                    strokeWeight: 1
+                });
+            } else {
+                userMarker.setPosition(userPos);
+                userAccuracyCircle.setCenter(userPos);
+                userAccuracyCircle.setRadius(position.coords.accuracy);
+            }
             
-            userMarker = new google.maps.Marker({
-                position: userPos,
-                map: map,
-                title: "You are here",
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 12,
-                    fillColor: "#4285F4",
-                    fillOpacity: 1,
-                    strokeColor: "#ffffff",
-                    strokeWeight: 3
-                },
-                zIndex: 999
-            });
+            // Map follows the user once the route has been shown
+            if (followUser && routeFitted) map.panTo(userPos);
             
-            userAccuracyCircle = new google.maps.Circle({
-                center: userPos,
-                radius: position.coords.accuracy,
-                map: map,
-                fillColor: "#4285F4",
-                fillOpacity: 0.15,
-                strokeColor: "#4285F4",
-                strokeWeight: 1
-            });
+            // Re-route from the new position after moving ~40m (at most every 10s)
+            if (!routeRequestPending && destPos) {
+                const moved = lastRoutePos ? distanceMeters(lastRoutePos, userPos) : Infinity;
+                if (!lastRoutePos || (moved > 40 && Date.now() - lastRouteTime > 10000)) {
+                    requestRoutes(userPos);
+                }
+            }
             
             const statusEl = document.getElementById('trackingStatus');
             if (statusEl) {
@@ -1693,6 +1875,7 @@ function startTracking() {
         },
         function(error) {
             console.error('Tracking error:', error);
+            if (map && !lastRoutePos && destPos) showDestinationOnly(destPos.lat, destPos.lng, 'Trail Location');
             const statusEl = document.getElementById('trackingStatus');
             if (statusEl) {
                 statusEl.textContent = '⚠️ Unable to get location';
@@ -1725,7 +1908,8 @@ function toggleTracking() {
 
 function centerOnUser() {
     if (userMarker && map) {
-        map.setCenter(userMarker.getPosition());
+        followUser = true;
+        map.panTo(userMarker.getPosition());
         map.setZoom(16);
     } else {
         alert('Start tracking first to see your location');

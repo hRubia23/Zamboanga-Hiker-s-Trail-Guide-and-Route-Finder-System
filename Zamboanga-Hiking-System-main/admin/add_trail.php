@@ -8,8 +8,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $description = $_POST['description'];
     $location = $_POST['location'];
     $difficulty = $_POST['difficulty'];
-    $latitude = $_POST['latitude'] ?? null;
-    $longitude = $_POST['longitude'] ?? null;
+    $latitude = ($_POST['latitude'] ?? '') !== '' ? $_POST['latitude'] : null;
+    $longitude = ($_POST['longitude'] ?? '') !== '' ? $_POST['longitude'] : null;
+    $highlights = trim($_POST['highlights'] ?? '') ?: null;
+    $distance_km = is_numeric($_POST['distance_km'] ?? '') ? $_POST['distance_km'] : null;
+    $duration_min = is_numeric($_POST['duration_min'] ?? '') ? (int)$_POST['duration_min'] : null;
+    $elevation_m = is_numeric($_POST['elevation_m'] ?? '') ? (int)$_POST['elevation_m'] : null;
+    $tips = trim($_POST['tips'] ?? '') ?: null;
+    $allowedFeatures = ['forest', 'water', 'wildlife', 'photo'];
+    $features = implode(',', array_intersect($_POST['features'] ?? [], $allowedFeatures)) ?: null;
     $image = null;
     
     if (!empty($_FILES['image']['name'])) {
@@ -18,8 +25,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         move_uploaded_file($_FILES['image']['tmp_name'], $targetDir . $image);
     }
     
-    $stmt = $pdo->prepare("INSERT INTO trails (name, description, location, difficulty, latitude, longitude, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$name, $description, $location, $difficulty, $latitude, $longitude, $image]);
+    $stmt = $pdo->prepare("INSERT INTO trails (name, description, highlights, tips, features, location, difficulty, latitude, longitude, distance_km, duration_min, elevation_m, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$name, $description, $highlights, $tips, $features, $location, $difficulty, $latitude, $longitude, $distance_km, $duration_min, $elevation_m, $image]);
     
     header("Location: manage_trails.php");
     exit();
@@ -532,6 +539,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="helper-text">Describe the trail experience, terrain, and what hikers can expect</div>
                     </div>
 
+                    <div class="form-group">
+                        <label>Trail Features</label>
+                        <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="forest"> 🌲 Forest Path</label>
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="water"> 🌊 Water Features</label>
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="wildlife"> 🦅 Wildlife Viewing</label>
+                            <label style="font-weight:500;"><input type="checkbox" name="features[]" value="photo"> 📸 Photo Opportunities</label>
+                        </div>
+                        <div class="helper-text">Only the checked features are shown on the trail page</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="highlights">Trail Highlights</label>
+                        <textarea id="highlights" name="highlights" placeholder="One highlight per line"></textarea>
+                        <div class="helper-text">Enter one highlight per line. Leave blank to hide this section.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tips">Essential Tips</label>
+                        <textarea id="tips" name="tips" placeholder="One tip per line"></textarea>
+                        <div class="helper-text">Enter one tip per line. Leave blank to hide this section.</div>
+                    </div>
+
 
                     <div class="form-group">
                         <label for="location">
@@ -540,7 +570,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" id="location" name="location" placeholder="Search for a location or click on the map...">
                         <input type="hidden" id="latitude" name="latitude">
                         <input type="hidden" id="longitude" name="longitude">
-                        <div class="helper-text">Search and click on the map to set the trail location</div>
+                        <div class="helper-text">Start typing a place and pick a suggestion, or click the map to set the trail location</div>
                     </div>
 
 
@@ -551,6 +581,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div id="map"></div>
                         <div class="coordinates-display" id="coordinates-display">
                             Click on the map to set the exact trail location
+                        </div>
+                        <input type="hidden" id="distance_km" name="distance_km">
+                        <input type="hidden" id="duration_min" name="duration_min">
+                        <input type="hidden" id="elevation_m" name="elevation_m">
+                        <div class="coordinates-display" id="stats-display" style="margin-top:8px;">
+                            📊 Stats (distance, walking time, elevation) are calculated automatically once you pin a location
                         </div>
                     </div>
 
@@ -608,121 +644,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA0_SCP530X1_feONlUZ1xHIiIk_lxodE8&libraries=places&callback=initMap"async defer></script>
+    <script src="../public/assets/js/google-picker.js"></script>
     <script>
-        let map;
-        let marker;
-        let autocomplete;
-
-
-        function initMap() {
-            const defaultCenter = { lat: 6.9214, lng: 122.0790 };
-
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: defaultCenter,
-                zoom: 12,
-                mapTypeId: 'terrain',
-                styles: [
-                    {
-                        featureType: 'poi.park',
-                        elementType: 'geometry.fill',
-                        stylers: [{ color: '#a7f3d0' }]
-                    },
-                    {
-                        featureType: 'landscape.natural',
-                        elementType: 'geometry.fill',
-                        stylers: [{ color: '#d1fae5' }]
-                    }
-                ]
-            });
-
-            map.addListener('click', function(event) {
-                const lat = event.latLng.lat();
-                const lng = event.latLng.lng();
-                
-                if (marker) {
-                    marker.setPosition(event.latLng);
-                } else {
-                    marker = new google.maps.Marker({
-                        position: event.latLng,
-                        map: map,
-                        draggable: true,
-                        animation: google.maps.Animation.DROP,
-                        title: 'Trail Location'
-                    });
-
-                    marker.addListener('dragend', function(event) {
-                        const lat = event.latLng.lat();
-                        const lng = event.latLng.lng();
-                        updateCoordinates(lat, lng);
-                        reverseGeocode(lat, lng);
-                    });
-                }
-                
-                updateCoordinates(lat, lng);
-                reverseGeocode(lat, lng);
-            });
-
-            const locationInput = document.getElementById('location');
-            autocomplete = new google.maps.places.Autocomplete(locationInput, {
-                types: ['geocode'],
-                componentRestrictions: { country: 'ph' }
-            });
-
-            autocomplete.addListener('place_changed', function() {
-                const place = autocomplete.getPlace();
-                
-                if (!place.geometry) {
-                    return;
-                }
-
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
-
-                map.setCenter(place.geometry.location);
-                map.setZoom(15);
-
-                if (marker) {
-                    marker.setPosition(place.geometry.location);
-                } else {
-                    marker = new google.maps.Marker({
-                        position: place.geometry.location,
-                        map: map,
-                        draggable: true,
-                        animation: google.maps.Animation.DROP,
-                        title: 'Trail Location'
-                    });
-
-                    marker.addListener('dragend', function(event) {
-                        const lat = event.latLng.lat();
-                        const lng = event.latLng.lng();
-                        updateCoordinates(lat, lng);
-                        reverseGeocode(lat, lng);
-                    });
-                }
-
-                updateCoordinates(lat, lng);
+        function initTrailMap() {
+            initTrailPicker({
+                mapId: 'map',
+                locationId: 'location',
+                latId: 'latitude',
+                lngId: 'longitude',
+                displayId: 'coordinates-display',
+                distanceId: 'distance_km',
+                durationId: 'duration_min',
+                elevationId: 'elevation_m',
+                statsDisplayId: 'stats-display'
             });
         }
-
-        function updateCoordinates(lat, lng) {
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
-            document.getElementById('coordinates-display').innerHTML = 
-                '<strong>📍 Coordinates:</strong> Latitude: ' + lat.toFixed(6) + ', Longitude: ' + lng.toFixed(6);
-        }
-
-        function reverseGeocode(lat, lng) {
-            const geocoder = new google.maps.Geocoder();
-            const latlng = { lat: lat, lng: lng };
-
-            geocoder.geocode({ location: latlng }, function(results, status) {
-                if (status === 'OK' && results[0]) {
-                    document.getElementById('location').value = results[0].formatted_address;
-                }
-            });
-        }
-
+    </script>
+    <script>
         const fileInput = document.getElementById('image');
         const fileName = document.getElementById('fileName');
 
@@ -750,5 +688,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         });
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?= GOOGLE_MAPS_API_KEY ?>&libraries=places&callback=initTrailMap" async defer></script>
 </body>
 </html>

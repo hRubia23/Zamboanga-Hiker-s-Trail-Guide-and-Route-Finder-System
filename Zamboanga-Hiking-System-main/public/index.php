@@ -1,11 +1,19 @@
 <?php
 session_start();
 include '../includes/db.php'; // adjust path to your DB connection
+require_once '../includes/functions.php';
 
 $trails = []; // define the variable so it's never null
 
 try {
-    $stmt = $pdo->query("SELECT * FROM trails"); // fetch from your trails table
+    // Rating and review count come from approved reviews only
+    $stmt = $pdo->query("
+        SELECT t.*,
+               (SELECT COUNT(*) FROM reviews r WHERE r.trail_id = t.id AND r.status = 'approved') AS review_count,
+               (SELECT AVG(r.rating) FROM reviews r WHERE r.trail_id = t.id AND r.status = 'approved') AS avg_rating
+        FROM trails t
+        ORDER BY t.id
+    ");
     if ($stmt) {
         $trails = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -14,15 +22,13 @@ try {
     $trails = [];
 }
 
-// Sample trail images mapping - Replace with your actual database image URLs
-$trailImages = [
-    1 => 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80',
-    2 => 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80',
-    3 => 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80',
-    4 => 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1920&q=80',
-    5 => 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1920&q=80',
-    6 => 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1920&q=80',
-];
+// Trail image: the uploaded file if it exists, otherwise a single neutral fallback
+function trail_card_image($image) {
+    if (!empty($image) && file_exists(__DIR__ . '/assets/uploads/' . $image)) {
+        return 'assets/uploads/' . rawurlencode($image);
+    }
+    return 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1070,57 +1076,66 @@ nav span::before {
         <?php else: ?>
             <ul class="trails-grid" id="trailsGrid">
                 <?php 
-                $features = [
-                    ['🌊 Waterfall', '🌺 Wildflowers', '🦅 Wildlife'],
-                    ['🌲 Forest Path', '🏞️ Scenic Views', '📸 Photo Spots'],
-                    ['⛺ Camping', '🎣 Fishing', '🚴 Biking'],
-                    ['🌅 Sunrise Views', '🌙 Night Hikes', '☁️ Cloud Forest']
-                ];
-                $index = 0;
+                $featureMap = trail_feature_map();
                 foreach ($trails as $trail): 
-                    $isPopular = $index % 3 === 0;
                     $trailId = $trail['id'];
-                    // Use image from database or fallback to default images
-                    $trailImage = $trail['image_url'] ?? ($trailImages[$trailId] ?? $trailImages[1]);
+                    $trailImage = trail_card_image($trail['image'] ?? '');
+                    $difficulty = strtolower($trail['difficulty'] ?? 'moderate');
+                    $reviewCount = (int)$trail['review_count'];
+                    $avgRating = $reviewCount > 0 ? round((float)$trail['avg_rating'], 1) : null;
+                    $metaDistance = format_trail_distance($trail['distance_km'] ?? null);
+                    $metaDuration = format_trail_duration($trail['duration_min'] ?? null);
+                    $metaElevation = format_trail_elevation($trail['elevation_m'] ?? null);
+                    $cardFeatures = array_filter(explode(',', $trail['features'] ?? ''), fn($f) => isset($featureMap[$f]));
+                    $trailUrl = 'pages/trail.php?id=' . $trailId;
                 ?>
                     <li class="trail-card" 
-                        data-difficulty="<?= strtolower($trail['difficulty'] ?? 'moderate') ?>"
+                        data-difficulty="<?= htmlspecialchars($difficulty) ?>"
                         data-image="<?= htmlspecialchars($trailImage) ?>"
-                        data-trail-id="<?= $trailId ?>">
+                        data-trail-id="<?= $trailId ?>"
+                        data-url="<?= htmlspecialchars($trailUrl) ?>"
+                        tabindex="0" role="link"
+                        aria-label="View <?= htmlspecialchars($trail['name']) ?>">
                         <div class="trail-image" style="background-image: url('<?= htmlspecialchars($trailImage) ?>'); background-size: cover; background-position: center;">
-                            <?php if ($isPopular): ?>
-                                <span class="popular-badge">🔥 Popular</span>
-                            <?php endif; ?>
-                            <span class="difficulty-badge difficulty-<?= strtolower($trail['difficulty'] ?? 'moderate') ?>">
-                                <?= ucfirst($trail['difficulty'] ?? 'Moderate') ?>
+                            <span class="difficulty-badge difficulty-<?= htmlspecialchars($difficulty) ?>">
+                                <?= ucfirst($difficulty) ?>
                             </span>
                         </div>
                         <div class="trail-content">
                             <h3>
-                                <a href="trail.php?id=<?= $trail['id'] ?>"><?= htmlspecialchars($trail['name']) ?></a>
+                                <a href="<?= htmlspecialchars($trailUrl) ?>"><?= htmlspecialchars($trail['name']) ?></a>
                             </h3>
+                            <?php if ($metaDistance || $metaDuration || $metaElevation): ?>
                             <div class="trail-meta">
-                                <span class="meta-item"><?= $trail['distance'] ?? '5.2' ?> km</span>
-                                <span class="meta-item"><?= $trail['duration'] ?? '2-3' ?> hrs</span>
-                                <span class="meta-item"><?= $trail['elevation'] ?? '450' ?> m</span>
+                                <?php if ($metaDistance): ?><span class="meta-item"><?= htmlspecialchars($metaDistance) ?></span><?php endif; ?>
+                                <?php if ($metaDuration): ?><span class="meta-item"><?= htmlspecialchars($metaDuration) ?></span><?php endif; ?>
+                                <?php if ($metaElevation): ?><span class="meta-item"><?= htmlspecialchars($metaElevation) ?></span><?php endif; ?>
                             </div>
-                            <p><?= htmlspecialchars($trail['description'] ?? 'A beautiful trail awaiting your exploration.') ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty(trim($trail['description'] ?? ''))): ?>
+                            <p><?= htmlspecialchars($trail['description']) ?></p>
+                            <?php endif; ?>
+                            <?php if ($cardFeatures): ?>
                             <div class="trail-features">
-                                <?php foreach (array_slice($features[$index % 4], 0, 3) as $feature): ?>
-                                    <span class="feature-tag"><?= $feature ?></span>
+                                <?php foreach ($cardFeatures as $f): ?>
+                                    <span class="feature-tag"><?= $featureMap[$f][0] ?> <?= $featureMap[$f][1] ?></span>
                                 <?php endforeach; ?>
                             </div>
+                            <?php endif; ?>
                             <div class="trail-footer">
                                 <div class="rating">
-                                    <span class="rating-stars">⭐⭐⭐⭐⭐</span>
-                                    <?= $trail['rating'] ?? '4.8' ?> <span style="color:#9ca3af">(<?= $trail['reviews'] ?? '234' ?>)</span>
+                                    <?php if ($avgRating !== null): ?>
+                                        <span class="rating-stars"><?= str_repeat('⭐', (int)round($avgRating)) ?></span>
+                                        <?= number_format($avgRating, 1) ?> <span style="color:#9ca3af">(<?= $reviewCount ?>)</span>
+                                    <?php else: ?>
+                                        <span style="color:#9ca3af; font-weight:600;">No ratings yet</span>
+                                    <?php endif; ?>
                                 </div>
-                                <a href="pages/trail.php?id=<?= $trail['id'] ?>" class="view-btn">Explore Trail →</a>
+                                <a href="<?= htmlspecialchars($trailUrl) ?>" class="view-btn">Explore Trail →</a>
                             </div>
                         </div>
                     </li>
                 <?php 
-                    $index++;
                 endforeach; 
                 ?>
             </ul>
@@ -1183,21 +1198,15 @@ nav span::before {
                     }
                 });
 
-                // Optional: Click to lock background
+                // Click anywhere on the card to open the trail (the existing hover background effect is kept)
                 card.addEventListener('click', function(e) {
-                    // Only if not clicking a link
-                    if (!e.target.closest('a') && !e.target.closest('.view-btn')) {
-                        const isLocked = this.classList.contains('bg-locked');
-                        
-                        // Remove lock from all cards
-                        cards.forEach(c => c.classList.remove('bg-locked'));
-                        
-                        if (!isLocked) {
-                            this.classList.add('bg-locked');
-                        } else {
-                            dynamicBg.classList.remove('active');
-                            overlay.classList.remove('active');
-                        }
+                    if (e.target.closest('a')) return;
+                    window.location.href = this.dataset.url;
+                });
+                card.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        window.location.href = this.dataset.url;
                     }
                 });
             });

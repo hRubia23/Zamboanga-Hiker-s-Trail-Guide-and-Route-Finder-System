@@ -36,6 +36,9 @@ define('INSTAGRAM_URL', '#');
 // Admin Settings
 define('ADMIN_EMAIL', 'admin@zamboangahiking.com');
 
+// Google Maps API key (restricted to localhost, test.zambohike.com and zambohike.com)
+define('GOOGLE_MAPS_API_KEY', 'AIzaSyBmesPIzzfeUhiFP3WGfL5myMimx0wdVbo');
+
 // Session Settings (only set if session not started)
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
