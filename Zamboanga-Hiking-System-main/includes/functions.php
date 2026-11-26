@@ -25,4 +25,37 @@ function trail_feature_map(){
         'photo' => ['📸', 'Photo Opportunities'],
     ];
 }
+
+function parse_trail_features($features){
+    if (!$features) return [];
+
+    $decodedFeatures = json_decode($features, true);
+    $featureValues = is_array($decodedFeatures) ? $decodedFeatures : explode(',', $features);
+
+    return array_values(array_filter(array_map('trim', $featureValues), 'strlen'));
+}
+
+function save_trail_features($selectedFeatures, $customFeatures){
+    $featureMap = trail_feature_map();
+    $selectedFeatures = array_filter((array)$selectedFeatures, 'is_string');
+    $features = array_values(array_intersect($selectedFeatures, array_keys($featureMap)));
+    $customFeatureLines = preg_split('/\R/', (string)$customFeatures);
+
+    foreach ($customFeatureLines as $feature) {
+        $feature = trim($feature);
+        if ($feature === '' || isset($featureMap[$feature])) continue;
+
+        $isDuplicate = false;
+        foreach ($features as $existingFeature) {
+            if (strcasecmp($existingFeature, $feature) === 0) {
+                $isDuplicate = true;
+                break;
+            }
+        }
+
+        if (!$isDuplicate) $features[] = $feature;
+    }
+
+    return $features ? json_encode($features, JSON_UNESCAPED_UNICODE) : null;
+}
 ?>

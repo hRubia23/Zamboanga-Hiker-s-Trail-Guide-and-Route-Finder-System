@@ -1086,7 +1086,7 @@ nav span::before {
                     $metaDistance = format_trail_distance($trail['distance_km'] ?? null);
                     $metaDuration = format_trail_duration($trail['duration_min'] ?? null);
                     $metaElevation = format_trail_elevation($trail['elevation_m'] ?? null);
-                    $cardFeatures = array_filter(explode(',', $trail['features'] ?? ''), fn($f) => isset($featureMap[$f]));
+                    $cardFeatures = parse_trail_features($trail['features'] ?? '');
                     $trailUrl = 'pages/trail.php?id=' . $trailId;
                 ?>
                     <li class="trail-card" 
@@ -1118,7 +1118,7 @@ nav span::before {
                             <?php if ($cardFeatures): ?>
                             <div class="trail-features">
                                 <?php foreach ($cardFeatures as $f): ?>
-                                    <span class="feature-tag"><?= $featureMap[$f][0] ?> <?= $featureMap[$f][1] ?></span>
+                                    <span class="feature-tag"><?= isset($featureMap[$f]) ? $featureMap[$f][0] . ' ' . htmlspecialchars($featureMap[$f][1]) : '✨ ' . htmlspecialchars($f) ?></span>
                                 <?php endforeach; ?>
                             </div>
                             <?php endif; ?>

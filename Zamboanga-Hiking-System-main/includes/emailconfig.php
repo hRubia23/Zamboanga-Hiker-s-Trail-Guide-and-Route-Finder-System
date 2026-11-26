@@ -2,7 +2,7 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require '../vendor/autoload.php'; // If using Composer
+require_once dirname(__DIR__) . '/vendor/autoload.php';
 // OR if manual installation:
 // require 'PHPMailer/src/Exception.php';
 // require 'PHPMailer/src/PHPMailer.php';

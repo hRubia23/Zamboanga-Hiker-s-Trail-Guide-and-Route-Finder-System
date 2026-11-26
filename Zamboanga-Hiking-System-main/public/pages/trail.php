@@ -1186,13 +1186,8 @@ nav span {
                     <?php endif; ?>
 
                     <?php
-                    $featureMap = [
-                        'forest' => ['🌲', 'Forest Path'],
-                        'water' => ['🌊', 'Water Features'],
-                        'wildlife' => ['🦅', 'Wildlife Viewing'],
-                        'photo' => ['📸', 'Photo Opportunities'],
-                    ];
-                    $trailFeatures = array_filter(explode(',', $trail['features'] ?? ''), fn($f) => isset($featureMap[$f]));
+                    $featureMap = trail_feature_map();
+                    $trailFeatures = parse_trail_features($trail['features'] ?? '');
                     $highlightLines = array_filter(array_map('trim', preg_split('/\R/', $trail['highlights'] ?? '')), 'strlen');
                     $tipLines = array_filter(array_map('trim', preg_split('/\R/', $trail['tips'] ?? '')), 'strlen');
                     ?>
@@ -1201,8 +1196,8 @@ nav span {
                     <div class="trail-features-grid">
                         <?php foreach ($trailFeatures as $f): ?>
                         <div class="feature-card">
-                            <span class="feature-icon"><?= $featureMap[$f][0] ?></span>
-                            <div class="feature-label"><?= $featureMap[$f][1] ?></div>
+                            <span class="feature-icon"><?= isset($featureMap[$f]) ? $featureMap[$f][0] : '✨' ?></span>
+                            <div class="feature-label"><?= htmlspecialchars($featureMap[$f][1] ?? $f) ?></div>
                         </div>
                         <?php endforeach; ?>
                     </div>

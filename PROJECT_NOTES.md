@@ -16,6 +16,9 @@ Handover notes so work can continue in a new chat/session. Code lives in `Zamboa
 1. `database/add_trail_coordinates.sql` – `trails.latitude`, `trails.longitude`
 2. `database/add_trail_content_fields.sql` – `trails.highlights`, `tips`, `features`
 3. `database/add_trail_stats.sql` – `trails.distance_km`, `duration_min`, `elevation_m`
+4. `database/add_password_resets.sql` – user/admin password reset codes
+5. `database/update_trail_features_to_text.sql` – allows arbitrary admin-added trail features
+6. `database/add_trail_views.sql` – analytics and trail-view tracking
 
 Reviews live in `reviews` (`status`: pending/approved/rejected). `trail_reviews` is unused.
 

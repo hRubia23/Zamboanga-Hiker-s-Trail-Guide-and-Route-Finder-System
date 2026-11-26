@@ -2,6 +2,7 @@
 require_once "../includes/auth.php";
 check_login();
 require_once "../includes/db.php";
+require_once "../includes/functions.php";
 $id = $_GET['id'];
 $stmt = $pdo->prepare("SELECT * FROM trails WHERE id=?");
 $stmt->execute([$id]);
@@ -25,8 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $duration_min = is_numeric($_POST['duration_min'] ?? '') ? (int)$_POST['duration_min'] : null;
     $elevation_m = is_numeric($_POST['elevation_m'] ?? '') ? (int)$_POST['elevation_m'] : null;
     $tips = trim($_POST['tips'] ?? '') ?: null;
-    $allowedFeatures = ['forest', 'water', 'wildlife', 'photo'];
-    $features = implode(',', array_intersect($_POST['features'] ?? [], $allowedFeatures)) ?: null;
+    $features = save_trail_features($_POST['features'] ?? [], $_POST['custom_features'] ?? '');
     $stmt = $pdo->prepare("UPDATE trails SET name=?, description=?, highlights=?, tips=?, features=?, location=?, difficulty=?, latitude=?, longitude=?, distance_km=?, duration_min=?, elevation_m=?, image=? WHERE id=?");
     $stmt->execute([$name, $description, $highlights, $tips, $features, $location, $difficulty, $latitude, $longitude, $distance_km, $duration_min, $elevation_m, $image, $id]);
     header("Location: manage_trails.php");
@@ -545,16 +545,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <span class="label-icon">🧭</span>
                             Trail Features
                         </label>
-                        <?php $selectedFeatures = explode(',', $trail['features'] ?? ''); ?>
+                        <?php
+                        $selectedFeatures = parse_trail_features($trail['features'] ?? '');
+                        $featureMap = trail_feature_map();
+                        $customFeatures = array_filter($selectedFeatures, function ($feature) use ($featureMap) {
+                            return !isset($featureMap[$feature]);
+                        });
+                        ?>
                         <div style="display:flex; flex-wrap:wrap; gap:16px;">
                             <label style="font-weight:500;"><input type="checkbox" name="features[]" value="forest" <?= in_array('forest', $selectedFeatures) ? 'checked' : '' ?>> 🌲 Forest Path</label>
                             <label style="font-weight:500;"><input type="checkbox" name="features[]" value="water" <?= in_array('water', $selectedFeatures) ? 'checked' : '' ?>> 🌊 Water Features</label>
                             <label style="font-weight:500;"><input type="checkbox" name="features[]" value="wildlife" <?= in_array('wildlife', $selectedFeatures) ? 'checked' : '' ?>> 🦅 Wildlife Viewing</label>
                             <label style="font-weight:500;"><input type="checkbox" name="features[]" value="photo" <?= in_array('photo', $selectedFeatures) ? 'checked' : '' ?>> 📸 Photo Opportunities</label>
                         </div>
+                        <label for="custom_features" style="margin-top:16px;">Other Features</label>
+                        <textarea id="custom_features" name="custom_features" placeholder="One custom feature per line (e.g., Camping Area)"><?= htmlspecialchars(implode("\n", $customFeatures)) ?></textarea>
                         <div class="helper-text">
                             <span class="helper-icon">💡</span>
-                            Only the checked features are shown on the trail page
+                            Choose the listed features or add any others. All saved features appear on the trail page.
                         </div>
                     </div>
 

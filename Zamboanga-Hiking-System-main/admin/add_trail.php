@@ -2,6 +2,7 @@
 require_once "../includes/auth.php";
 check_login();
 require_once "../includes/db.php";
+require_once "../includes/functions.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
@@ -15,8 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $duration_min = is_numeric($_POST['duration_min'] ?? '') ? (int)$_POST['duration_min'] : null;
     $elevation_m = is_numeric($_POST['elevation_m'] ?? '') ? (int)$_POST['elevation_m'] : null;
     $tips = trim($_POST['tips'] ?? '') ?: null;
-    $allowedFeatures = ['forest', 'water', 'wildlife', 'photo'];
-    $features = implode(',', array_intersect($_POST['features'] ?? [], $allowedFeatures)) ?: null;
+    $features = save_trail_features($_POST['features'] ?? [], $_POST['custom_features'] ?? '');
     $image = null;
     
     if (!empty($_FILES['image']['name'])) {
@@ -547,7 +547,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <label style="font-weight:500;"><input type="checkbox" name="features[]" value="wildlife"> 🦅 Wildlife Viewing</label>
                             <label style="font-weight:500;"><input type="checkbox" name="features[]" value="photo"> 📸 Photo Opportunities</label>
                         </div>
-                        <div class="helper-text">Only the checked features are shown on the trail page</div>
+                        <label for="custom_features" style="margin-top:16px;">Other Features</label>
+                        <textarea id="custom_features" name="custom_features" placeholder="One custom feature per line (e.g., Camping Area)"></textarea>
+                        <div class="helper-text">Choose the listed features or add any others. All saved features appear on the trail page.</div>
                     </div>
 
                     <div class="form-group">

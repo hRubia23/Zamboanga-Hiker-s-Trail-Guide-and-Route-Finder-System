@@ -1,0 +1,2 @@
+ALTER TABLE trails
+    MODIFY COLUMN features TEXT NULL;
